@@ -1,3 +1,5 @@
+from numpy import square
+from numpy.lib.polynomial import roots
 from Grafo import Grafo
 from Nodo import Nodo
 from Arco import Arco
@@ -277,7 +279,51 @@ def plot_graph():
     plt.show()
 
     return graphs_groupped, times
+#---------------------------------------------------------------Karger & Stein---------------------------------------------------------------
+def edgeSelect(g):
+    pass
 
+def contractEdge(g,edge):
+    u = edge.nodo1
+    v = edge.nodo2
+    g.d[u] = g.d[u] + g.d[v] - 2*g.adj_matrix[u, v]
+    g.d[v] = 0
+
+    for i in range(len(g.adj_matrix)):
+        g.adj_matrix[u, i] = g.adj_matrix[u, i] + g.adj_matrix[v, i]
+        g.adj_matrix[i, u] = g.adj_matrix[i, u] + g.adj_matrix[i, v]
+        g.adj_matrix[v, i] = 0
+        g.adj_matrix[i, v] = 0 
+
+def contract(g, k):
+    n = g.n_nodi
+    for i in range(n-k):
+        edge = edgeSelect(g)
+        contractEdge(g, edge)
+    return g
+
+#funzione che consente di trovare un taglio 
+def recursiveContract(g):
+    w = []
+    n = g.n_nodi
+    if n <= 6:
+        g = contract(g, 2)
+        #return unico arco che rimane in g
+    t = round(g.n_nodi/math.sqrt(2) + 1)
+    for i in range(2):
+        g = contract(g, t)
+        w.append(recursiveContract(g))
+    return min(w)
+
+
+def kargerAndStein(g, k):
+    g2 = g
+    minCut = float('inf')
+    for i in range(k):
+        cut = recursiveContract(g2)
+        if cut < minCut:
+            minCut = cut
+    return minCut
 
 
 
