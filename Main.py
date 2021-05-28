@@ -15,6 +15,7 @@ import collections
 import matplotlib.pyplot as plt
 import copy
 import time
+from Utility import *
 
 #lista di grafi prim
 p_g = []
@@ -51,8 +52,7 @@ def crea_grafi(path):
     id2Node = {}
     lista_nodi = set()
     lista_archi = []
-    lista_adiacenza = {}
-    lista_adiacenza_nodi = {}
+    
     
     f = open("dataset/" + path, "r")
 
@@ -69,7 +69,9 @@ def crea_grafi(path):
     for riga in righe:
         lista_valori.append(riga.split())
     f.close()
-        
+    
+    #inizializzo matrice di adiacenza
+    adj_matrix = [[0]*(g.n_nodi+1) for i in range(g.n_nodi+1)]
 
     #creo il set di nodi e lista archi
     for i in range(0, len(lista_valori)):
@@ -77,39 +79,29 @@ def crea_grafi(path):
         nodo_1 = int(lista_valori[i][0])
         nodo_2 = int(lista_valori[i][1])
         peso = int(lista_valori[i][2])
-        arco_1 = Arco(nodo_1, nodo_2, peso)
         
+        adj_matrix[nodo_1][nodo_2] = peso
+
+        #set di nodi, per evitare i duplicati
         lista_nodi.add(nodo_1)
         lista_nodi.add(nodo_2)
-        lista_adiacenza.setdefault(nodo_1, [])    #inzializzo ogni chiave nodo a un valore list
-        lista_adiacenza.setdefault(nodo_2, [])    
-        lista_adiacenza_nodi.setdefault(nodo_1, [])
-        lista_adiacenza_nodi.setdefault(nodo_2, [])
-
+        
+        arco_1 = Arco(nodo_1, nodo_2, peso)
         lista_archi.append(arco_1)
+
     
     #creo gli oggetti nodo e il dizionario id2Node
     for nodo in lista_nodi:
         obj_nodo = Nodo(nodo)
         id2Node[obj_nodo.id] = obj_nodo
 
-    #riempio le liste di adicenza create in precedenza
-    for i in range(0, len(lista_valori)):
-        nodo_1 = int(lista_valori[i][0])
-        nodo_2 = int(lista_valori[i][1])
-        peso = int(lista_valori[i][2])
-        lista_adiacenza_nodi[nodo_1].append(id2Node[nodo_2])
-        lista_adiacenza_nodi[nodo_2].append(id2Node[nodo_1])
-        lista_adiacenza[nodo_1].append(Arco(nodo_1, nodo_2, peso))      #arco(u,v)
-        lista_adiacenza[nodo_2].append(Arco(nodo_2, nodo_1, peso))      #arco(v,u)
-    
+
     #setto gli attributi dell'arco
     g.id2Node = id2Node
-    g.lista_nodi = lista_nodi
     g.lista_archi = lista_archi
-    g.lista_adiacenza = lista_adiacenza
-    g.lista_adiacenza_nodi = lista_adiacenza_nodi
-
+    g.lista_nodi = lista_nodi
+    g.lista_nodi_id = [n for n in range(1, g.n_nodi+1)]     
+    g.adj_matrix = adj_matrix
     
     lista_grafi.append(g)
 
@@ -280,25 +272,58 @@ def plot_graph():
 
     return graphs_groupped, times
 #---------------------------------------------------------------Karger & Stein---------------------------------------------------------------
+
+def gradoPesato(g, nodi):
+    for u in nodi:
+        for peso in g.adj_matrix[u.id][1:]:
+            u.d = u.d + peso
+        print("grado pesato: u", u.d)
+
+def randomSelect(g,c):
+    r = random.randint(0, max(c)-1)
+    print("elemento casuale:", r)
+    for i in c:
+        print("lista c:", i)
+    index = binarySearch(c, 0, len(c), r)
+    vertex = g.getListaNodi()[index]
+    return vertex
+
 def edgeSelect(g):
-    pass
+    pesiComulativi = []
+    tot = 0
 
-def contractEdge(g,edge):
-    u = edge.nodo1
-    v = edge.nodo2
-    g.d[u] = g.d[u] + g.d[v] - 2*g.adj_matrix[u, v]
-    g.d[v] = 0
+    for u in g.getListaNodi():
+        tot = tot + u.d
+        pesiComulativi.append(tot)
+    u = randomSelect(g,pesiComulativi)
+    
+    pesiComulativi = []
+    tot = 0
+    for v in g.getListaNodi():
+        tot += g.adj_matrix[u.id][v.id]
+        pesiComulativi.append(tot)
+    v = randomSelect(g,pesiComulativi)
 
-    for i in range(len(g.adj_matrix)):
-        g.adj_matrix[u, i] = g.adj_matrix[u, i] + g.adj_matrix[v, i]
-        g.adj_matrix[i, u] = g.adj_matrix[i, u] + g.adj_matrix[i, v]
-        g.adj_matrix[v, i] = 0
-        g.adj_matrix[i, v] = 0 
+    return u,v
+
+
+def contractEdge(g, edge):
+    u = edge[0]
+    v = edge[1]
+    u.d = u.d + v.d - (2*g.adj_matrix[u.id][v.id])
+    v.d = 0
+
+    for i in range(1,len(g.adj_matrix)):
+        g.adj_matrix[u.id][i] = g.adj_matrix[u.id][i] + g.adj_matrix[v.id][i]
+        g.adj_matrix[i][u.id] = g.adj_matrix[i][u.id] + g.adj_matrix[i][v.id]
+        g.adj_matrix[v.id][i] = 0
+        g.adj_matrix[i][v.id] = 0 
 
 def contract(g, k):
     n = g.n_nodi
     for i in range(n-k):
-        edge = edgeSelect(g)
+        u,v = edgeSelect(g)
+        edge = [u,v]
         contractEdge(g, edge)
     return g
 
@@ -308,8 +333,9 @@ def recursiveContract(g):
     n = g.n_nodi
     if n <= 6:
         g = contract(g, 2)
-        #return unico arco che rimane in g
+        return 1 #da cambiare
     t = round(g.n_nodi/math.sqrt(2) + 1)
+    
     for i in range(2):
         g = contract(g, t)
         w.append(recursiveContract(g))
@@ -317,6 +343,7 @@ def recursiveContract(g):
 
 
 def kargerAndStein(g, k):
+    gradoPesato(g, g.getListaNodi())
     g2 = g
     minCut = float('inf')
     for i in range(k):
@@ -326,6 +353,27 @@ def kargerAndStein(g, k):
     return minCut
 
 
+
+#---------------------------------------------------------------Stoer & Wagner---------------------------------------------------------------
+
+def globalMinCut(g):
+    lista_nodi = g.getListaNodi()
+    if g.n_nodi == 2:
+        l1 = lista_nodi[0]
+        l2 = lista_nodi[1]
+        return l1, l2
+    else:
+        l1, l2, s, t = stMinCut(g)
+        
+        
+
+
+def stMinCut(g):
+    pass
+
+def stMerge(g,s,t):
+    pass
+    
 
 
 
@@ -342,11 +390,18 @@ lista_grafi = sorted(lista_grafi, key=lambda grafo: (grafo.n_nodi, grafo.n_archi
 
 print("-"*50)
 
-n_tot = 0
-a_tot = 0
-for g in lista_grafi:
-    n_tot += g.n_nodi
-    a_tot += g.n_archi 
-print(n_tot, a_tot) #11640 15452
+# n_tot = 0
+# a_tot = 0
+# for g in lista_grafi:
+#     n_tot += g.n_nodi
+#     a_tot += g.n_archi 
+# print(n_tot, a_tot) #11640 15452
 
+# for g in lista_grafi:
+#     if g.n_nodi == 10 and g.n_archi == 14:
+#         print(g.adj_matrix[1][2])
+#         print(g.adj_matrix[1][3])
+
+ripetizioni = round(math.log(lista_grafi[0].n_nodi)**2)
+kargerAndStein(lista_grafi[0], ripetizioni)
 

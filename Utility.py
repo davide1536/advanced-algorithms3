@@ -8,6 +8,22 @@ from tabulate import tabulate
 
 
 ################################## Merge + MergeSort ##################################
+def binarySearch(c,low,high, element):
+    if high >= low:
+        mid = (high + low) // 2
+
+        if mid < len(c)-1:
+            if c[mid] <= element and c[mid+1] > element:
+                return mid + 1 
+        
+            elif c[mid] > element:
+                return binarySearch(c, low, mid-1, element)
+
+            else:
+                return binarySearch(c, mid+1, high, element)
+
+    else:
+        return -1
 
 # algoritmo merge modificato per confrontare i pesi degli archi, data una lista archi
 # p, q, r sono indici dell'array tali che p <= q < r
