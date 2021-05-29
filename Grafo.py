@@ -5,16 +5,17 @@ class Grafo:
     def __init__(self):
         self.n_nodi = 0
         self.n_archi = 0
-        self.lista_nodi = set()
+        self.lista_nodi_obj = []
         self.lista_nodi_id = [] #lista nodi contentente gli id univoci
         self.lista_archi = []
         self.id2Node = {}
         self.adj_matrix = None
+        ## inizio forse inutili
+        self.merged_node = [] #lista di nodi compressi
+        self.merged_matrix = [] #matrice compressa
+        self.merged_n_nodi = 0
+        ## fine forse inutili
         self.totPeso = 0
-
-    
-    def merge():
-        pass
     
        
     

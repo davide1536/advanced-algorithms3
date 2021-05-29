@@ -1,4 +1,4 @@
-from numpy import square
+from numpy import insert, square
 from numpy.lib.polynomial import roots
 from Grafo import Grafo
 from Nodo import Nodo
@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import copy
 import time
 from Utility import *
+from heap import *
 
 #lista di grafi prim
 p_g = []
@@ -51,6 +52,7 @@ def crea_grafi(path):
     g = Grafo()
     id2Node = {}
     lista_nodi = set()
+    lista_nodi_obj = []
     lista_archi = []
     
     
@@ -94,12 +96,13 @@ def crea_grafi(path):
     for nodo in lista_nodi:
         obj_nodo = Nodo(nodo)
         id2Node[obj_nodo.id] = obj_nodo
+        lista_nodi_obj.append(obj_nodo)
 
 
     #setto gli attributi dell'arco
     g.id2Node = id2Node
     g.lista_archi = lista_archi
-    g.lista_nodi = lista_nodi
+    g.lista_nodi_obj = lista_nodi_obj
     g.lista_nodi_id = [n for n in range(1, g.n_nodi+1)]     
     g.adj_matrix = adj_matrix
     
@@ -134,10 +137,10 @@ def measure_run_time(n_instances, graphs, algorithm):
             start_time = perf_counter_ns()
             m = 0
             while m < iterations:
-                prim(graphs[i],graphs[i].getNodo(nodo_casuale))
+                #prim(graphs[i],graphs[i].getNodo(nodo_casuale))
                 m+=1
             end_time = perf_counter_ns()
-            p_g.append(prim(graphs[i],graphs[i].getNodo(nodo_casuale)).getGrafoPrim())
+            #p_g.append(prim(graphs[i],graphs[i].getNodo(nodo_casuale)).getGrafoPrim())
             p_t.append(round((end_time - start_time)/iterations//1000, 3))
             gc.enable()
 
@@ -146,10 +149,10 @@ def measure_run_time(n_instances, graphs, algorithm):
             start_time = perf_counter_ns()
             j = 0
             while j < iterations:
-                naiveKruskal(graphs[i])
+                #naiveKruskal(graphs[i])
                 j+=1
             end_time = perf_counter_ns()
-            kn_g.append(naiveKruskal(graphs[i]))
+            #kn_g.append(naiveKruskal(graphs[i]))
             kn_t.append(round((end_time - start_time)/iterations//1000, 3))
             gc.enable()
 
@@ -158,10 +161,10 @@ def measure_run_time(n_instances, graphs, algorithm):
             start_time = perf_counter_ns()
             k = 0
             while k < iterations:
-                kruskal(graphs[i])     
+                #kruskal(graphs[i])     
                 k += 1
             end_time = perf_counter_ns()
-            k_g.append(kruskal(graphs[i]))
+            #k_g.append(kruskal(graphs[i]))
             k_t.append(round((end_time - start_time)/iterations//1000, 3))
             gc.enable()
 
@@ -357,23 +360,56 @@ def kargerAndStein(g, k):
 #---------------------------------------------------------------Stoer & Wagner---------------------------------------------------------------
 
 def globalMinCut(g):
-    lista_nodi = g.getListaNodi()
-    if g.n_nodi == 2:
-        l1 = lista_nodi[0]
-        l2 = lista_nodi[1]
-        return l1, l2
-    else:
-        l1, l2, s, t = stMinCut(g)
-        
-        
 
+    if g.n_nodi == 2:
+        return g
+    else:
+        g1, s, t = stMinCut(g)
+        g2 = globalMinCut(stMerge(g, s, t))
+        if(g1.totPeso < g2.totPeso):
+            return g1
+        else:
+            return g2
+        
+        
 
 def stMinCut(g):
-    pass
+    q = []
+    for u in g.lista_nodi_obj:
+        u.key = 0
+        insert(q, u, u.key)
+    s,t = None
+    while len(q) != 0:
+        #u = extractMax(q)
+        s = t
+        t = u
+        for arco in g.lista_archi:
+            v = g.getNodo(arco.nodo2)
+            if v.in_h == 1:
+                v.key += arco.peso
+    ################ da finire :(
+
+
+
+
 
 def stMerge(g,s,t):
-    pass
-    
+    new_matrix = [] #matrice con nodo compresso
+    new_matrix[:] = g.adj_matrix
+    new_matrix[s][t], new_matrix[t][s] = 0
+    g.merged_node.append(s)
+    g.merged_node.append(t)
+
+    for nodo in g.lista_nodi_id:
+        if g.adj_matrix[s][nodo] != 0:
+            new_matrix[s][nodo] += new_matrix[t][nodo]
+        if g.adj_matrix[nodo][s] != 0:
+            new_matrix[nodo][s] += new_matrix[nodo][t]
+        new_matrix[t][nodo], new_matrix[nodo][t] = 0
+
+    g.merged_matrix = new_matrix
+    g.merged_n_nodi = g.n_nodi - 1
+    return g
 
 
 
