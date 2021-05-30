@@ -141,6 +141,31 @@ def findSet(g, nodo1):
 
 
 
+
+
+################################## Funzioni ##################################
+
+def print_m(matrix_old):
+    matrix = []
+    matrix[:] = matrix_old
+    for i in range(len(matrix)):
+        matrix[i][0] = i
+    tabella = []
+    for i in range(1, len(matrix)):
+        tabella.append(matrix[i])
+
+    print()
+    print(tabulate(tabella, headers= [str(i) for i in range(1, len(matrix))], tablefmt='grid'))
+
+
+
+
+
+
+
+
+
+
 ################################## Funzioni di Test ##################################
 
 

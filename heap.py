@@ -10,48 +10,52 @@
 #     MinHeapInsert(h, key) --> h= heap, key = nuovo valore da aggiungere all'heap, dato un oggetto heap aggiungo un nuovo valore key
 #     HeapMinimum(h) --> ottengo il valore minimo dell'heap
 #     HeapExtractMin(h) --> recupera il valore minimo dall'heap e eliminalo
+from numpy import maximum
 from Nodo import Nodo
-class heap:
+import math
+
+class Heap:
     def __init__(self, vector):
         self.vector = vector
         self.length = len(vector)
         self.heapsize = self.length
 
-def BuildMinHeap(h):
-    for i in range (h.length//2-1, -1, -1):
-        MinHeapify(h, i)
 
-def MinHeapify (h, i):
+def buildMaxHeap(h):
+    for i in range(h.length//2-1, -1, -1):
+        maxHeapify(h, i)
+
+
+def maxHeapify (h, i):
     l = left(i)
     r = right(i)
-    minimum = i
-    if l <= h.heapsize-1 and h.vector[l].key < h.vector[i].key:
-        minimum = l
+    maximum = i
+    if l <= h.heapsize-1 and h.vector[l].key > h.vector[i].key:
+        maximum = l
     else:
-        minimum = i
-    if r <= h.heapsize-1 and h.vector[r].key < h.vector[minimum].key:
-        minimum = r
-    if minimum != i:
+        maximum = i
+    if r <= h.heapsize-1 and h.vector[r].key > h.vector[maximum].key:
+        maximum = r
+    if maximum != i:
         #salvo gli indici
         indexCurrent = h.vector[i].heapIndex
-        indexMinimum = h.vector[minimum].heapIndex
+        indexMaximum = h.vector[maximum].heapIndex
         #scambio gli indici
-        h.vector[i].heapIndex = indexMinimum
-        h.vector[minimum].heapIndex = indexCurrent
+        h.vector[i].heapIndex = indexMaximum
+        h.vector[maximum].heapIndex = indexCurrent
         #scambio i valori
         #temp = h.vector[i]                  #devo sia scambiare i valori ma anche l'indice associato ad ogni valore
-        h.vector[i], h.vector[minimum] = h.vector[minimum], h.vector[i]
-        #h.vector[minimum] = temp
+        h.vector[i], h.vector[maximum] = h.vector[maximum], h.vector[i]
+        #h.vector[maximum] = temp
+
+        return maxHeapify(h,maximum)
 
 
-
-        return MinHeapify(h,minimum)
-
-def HeapDecreaseKey(h, i, key):
-    if key > h.vector[i].key:
-        exit("la nuova chiave è più grande di quella corrente")
+def heapIncreaseKey(h, i, key):
+    if key < h.vector[i].key:
+        exit("la nuova chiave è più piccola di quella corrente")
     h.vector[i].key = key
-    while i>0 and h.vector[parent(i)].key > h.vector[i].key:
+    while i>0 and h.vector[parent(i)].key < h.vector[i].key:
         #salvo gli indici
         currentIndex = h.vector[i].heapIndex
         parentIndex = h.vector[parent(i)].heapIndex
@@ -66,25 +70,25 @@ def HeapDecreaseKey(h, i, key):
         #h.vector[parent(i)] = temp
         i = parent(i)
 
-# def MinHeapInsert(h, key):
-#     h.heapsize = h.heapsize+1
-#     h.vector.insert(h.heapsize-1, Nodofloat('inf')) #il valore più piccolo di tutti
-#     HeapDecreasKey(h, h.heapsize-1, key)
+def maxHeapInsert(h, key):
+    h.heapsize = h.heapsize+1
+    h.vector[h.heapsize-1] = -math.inf #il valore più piccolo di tutti
+    heapIncreaseKey(h, h.heapsize-1, key)
 
 
-def HeapMinimum(h):
-    return h.vector[0]
+# def HeapMinimum(h):
+#     return h.vector[0]
 
-def HeapExtractMin(h):
+def heapExtractMax(h):
     if h.heapsize < 1:
         print ("underflow dell'heap")
-    minimum = h.vector[0]
+    max = h.vector[0]
     h.vector[0] = h.vector[h.heapsize-1]
     h.vector[0].heapIndex = 0
     h.heapsize = h.heapsize - 1
-    MinHeapify(h, 0)
-    minimum.in_h = 0
-    return minimum
+    maxHeapify(h, 0)
+    max.in_h = 0
+    return max
 
 def isIn(v):
     if v.in_h == 1:

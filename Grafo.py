@@ -10,11 +10,13 @@ class Grafo:
         self.lista_archi = []
         self.id2Node = {}
         self.adj_matrix = None
-        ## inizio forse inutili
-        self.merged_node = [] #lista di nodi compressi
+        ## inizio dei forse inutili
+        self.merged_node = set() #lista di nodi compressi
+        self.null_node = set() #nodi non più presenti
         self.merged_matrix = [] #matrice compressa
         self.merged_n_nodi = 0
-        ## fine forse inutili
+        self.lista_adiacenza = []
+        ## fine dei forse inutili
         self.totPeso = 0
     
        
