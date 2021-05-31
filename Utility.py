@@ -8,12 +8,14 @@ from tabulate import tabulate
 
 
 ################################## Merge + MergeSort ##################################
-def binarySearch(c,low,high, element):
+
+def binarySearch(c, low, high, element):
     if high >= low:
         mid = (high + low) // 2
 
         if mid < len(c)-1:
             if c[mid] <= element and c[mid+1] > element:
+                #print("elementi trovati binary:", c[mid], c[mid+1])
                 return mid + 1 
         
             elif c[mid] > element:
@@ -21,6 +23,8 @@ def binarySearch(c,low,high, element):
 
             else:
                 return binarySearch(c, mid+1, high, element)
+        else:
+            return mid
 
     else:
         return -1

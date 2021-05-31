@@ -14,7 +14,7 @@ class Grafo:
         self.merged_node = set() #lista di nodi compressi
         self.null_node = set() #nodi non più presenti
         self.merged_matrix = [] #matrice compressa
-        self.merged_n_nodi = 0
+        self.merged_n_nodi = 0 #numero di nodi rimasti
         self.lista_adiacenza = []
         ## fine dei forse inutili
         self.totPeso = 0

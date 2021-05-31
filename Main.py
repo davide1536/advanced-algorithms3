@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import copy
 import time
 from Utility import *
-from Heap import *
+from heap import *
 
 #lista di grafi prim
 p_g = []
@@ -114,7 +114,7 @@ def crea_grafi(path):
     #setto gli attributi dell'arco
     g.id2Node = id2Node
     g.lista_archi = lista_archi
-    g.lista_nodi_obj = lista_nodi_obj
+    g.lista_nodi_obj = sorted(lista_nodi_obj, key=lambda nodo: (nodo.id))
     g.lista_nodi_id = [n for n in range(1, g.n_nodi+1)]     
     g.adj_matrix = adj_matrix
     g.lista_adiacenza = lista_adiacenza
@@ -294,16 +294,18 @@ def gradoPesato(g, nodi):
     for u in nodi:
         for peso in g.adj_matrix[u.id][1:]:
             u.d = u.d + peso
-        print("grado pesato: u", u.d)
 
 def randomSelect(g,c):
-    r = random.randint(0, max(c)-1)
-    print("elemento casuale:", r)
-    for i in c:
-        print("lista c:", i)
-    index = binarySearch(c, 0, len(c), r)
+    #print("massimo di c:", max(c))
+    r = random.randint(c[0], c[len(c)-1])
+    #print("elemento casuale:", r)
+    # for i in c:
+    #     print("lista c:", i)
+    index = binarySearch(c, 0, len(c)-1, r)
     vertex = g.getListaNodi()[index]
+    #print("il vertice corrispondente e'", vertex.id)
     return vertex
+
 
 def edgeSelect(g):
     pesiComulativi = []
@@ -312,6 +314,7 @@ def edgeSelect(g):
     for u in g.getListaNodi():
         tot = tot + u.d
         pesiComulativi.append(tot)
+
     u = randomSelect(g,pesiComulativi)
     
     pesiComulativi = []
@@ -329,31 +332,37 @@ def contractEdge(g, edge):
     v = edge[1]
     u.d = u.d + v.d - (2*g.adj_matrix[u.id][v.id])
     v.d = 0
-
+    g.adj_matrix[u.id][v.id] = 0
+    g.adj_matrix[v.id][u.id] = 0
     for i in range(1,len(g.adj_matrix)):
         g.adj_matrix[u.id][i] = g.adj_matrix[u.id][i] + g.adj_matrix[v.id][i]
         g.adj_matrix[i][u.id] = g.adj_matrix[i][u.id] + g.adj_matrix[i][v.id]
         g.adj_matrix[v.id][i] = 0
         g.adj_matrix[i][v.id] = 0 
+    
+    g.merged_n_nodi -= 1
+
 
 def contract(g, k):
-    n = g.n_nodi
+    n = g.merged_n_nodi
     for i in range(n-k):
         u,v = edgeSelect(g)
         edge = [u,v]
         contractEdge(g, edge)
     return g
 
-#funzione che consente di trovare un taglio 
+
+#funzione che consente di trovare un taglio
 def recursiveContract(g):
     w = []
-    n = g.n_nodi
+    n = g.merged_n_nodi
     if n <= 6:
         g = contract(g, 2)
         return 1 #da cambiare
-    t = round(g.n_nodi/math.sqrt(2) + 1)
+    t = round(g.merged_n_nodi/math.sqrt(2) + 1)
     
     for i in range(2):
+
         g = contract(g, t)
         w.append(recursiveContract(g))
     return min(w)
@@ -465,9 +474,11 @@ print("-"*50)
 #     if g.n_nodi == 10 and g.n_archi == 14:
 #         print(g.adj_matrix[1][2])
 #         print(g.adj_matrix[1][3])
+for grafo in lista_grafi:
+    print("faccio grafo da", grafo.n_nodi)
+    ripetizioni = round(math.log(grafo.n_nodi)**2)
+    print(ripetizioni)
+    kargerAndStein(grafo, ripetizioni)
 
-#ripetizioni = round(math.log(lista_grafi[0].n_nodi)**2)
-#kargerAndStein(lista_grafi[0], ripetizioni)
-
-print_m(lista_grafi[0].adj_matrix)
+print_m(lista_grafi[5].adj_matrix)
 #globalMinCut(lista_grafi[0])
