@@ -16,7 +16,9 @@ import math
 
 class Heap:
     def __init__(self, vector):
-        self.vector = vector
+        new_vector = []
+        new_vector[:] = vector #così il vettore originale non viene modificato
+        self.vector = new_vector
         self.length = len(vector)
         self.heapsize = self.length
 

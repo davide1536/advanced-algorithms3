@@ -16,6 +16,7 @@ class Grafo:
         self.merged_matrix = [] #matrice compressa
         self.merged_n_nodi = 0 #numero di nodi rimasti
         self.lista_adiacenza = []
+        self.lista_nodi_updated = []
         ## fine dei forse inutili
         self.totPeso = 0
     

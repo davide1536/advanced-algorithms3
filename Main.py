@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import copy
 import time
 from Utility import *
-from heap import *
+from Heap import *
 
 #lista di grafi prim
 p_g = []
@@ -112,6 +112,10 @@ def crea_grafi(path):
 
 
     #setto gli attributi dell'arco
+    g.lista_nodi_updated = []
+    g.lista_merged = []
+    g.merged_matrix = [] #matrice con nodo compresso
+    g.merged_matrix[:] = adj_matrix
     g.id2Node = id2Node
     g.lista_archi = lista_archi
     g.lista_nodi_obj = sorted(lista_nodi_obj, key=lambda nodo: (nodo.id))
@@ -119,7 +123,8 @@ def crea_grafi(path):
     g.adj_matrix = adj_matrix
     g.lista_adiacenza = lista_adiacenza
     g.merged_n_nodi = g.n_nodi
-    
+    g.lista_nodi_updated[:] = lista_nodi_obj
+    g.lista_merged
     lista_grafi.append(g)
 
 
@@ -383,33 +388,32 @@ def kargerAndStein(g, k):
 #---------------------------------------------------------------Stoer & Wagner---------------------------------------------------------------
 
 def globalMinCut(g):
-    print_m(g.merged_matrix)
     if g.merged_n_nodi == 2:
-        print_m(g.merged_matrix)
+        print([i.id for i in g.lista_nodi_updated])
         return g
     else:
         peso_g1, s, t = stMinCut(g)
         g2 = globalMinCut(stMerge(g, s, t))
-        print("-"*50)
-        print("nodi null", g2.null_node)
-        print("nodi merged", s, t, g2.merged_node)
-        print("-"*50)
-        # if(peso_g1 < g2.totPeso):
-        #     return peso_g1
-        # else:
-        #     return g2
+        #print("-"*50)
+        #print("nodi null", [i.id for i in g2.null_node])
+        #print("nodi merged", s.id, t.id, [i.id for i in g2.merged_node])
+        #print("-"*50)
+        if(peso_g1 < g2.totPeso):
+            return peso_g1
+        else:
+            return g2
         
         
 
 def stMinCut(g):
     #inizializzo nodi
     index = 0
-    for nodo in g.lista_nodi_obj:
+    for nodo in g.lista_nodi_updated:
         nodo.in_h = 1
         nodo.key = 0  #float('inf') indica un valore superiore a qualsiasi altro valore
         nodo.heapIndex = index  #per non usare la funzione 'index' 
         index += 1
-    q = Heap(g.lista_nodi_obj)
+    q = Heap(g.lista_nodi_updated)
     buildMaxHeap(q)
     s = None
     t = None
@@ -417,14 +421,17 @@ def stMinCut(g):
         u = heapExtractMax(q)
         s = t
         t = u
-        for arco in g.lista_adiacenza[u.id]:
-            v = g.getNodo(arco.nodo2)
-            if isIn(v) == 1:
-                v.key += arco.peso
-                index = v.heapIndex  #ottengo la sua posizione all'interno dell'heap
-                heapIncreaseKey(q, index, v.key)
-    
-    return t.key ,s, t
+        i = -1 #indice per trovare i vicini di u
+        for nodo_adj in g.merged_matrix[u.id]:
+            i += 1
+            if nodo_adj != 0 and i > 0:
+                v = g.getNodo(i)
+                if isIn(v) == 1:
+                    v.key += g.merged_matrix[u.id][v.id]
+                    index = v.heapIndex  #ottengo la sua posizione all'interno dell'heap
+                    heapIncreaseKey(q, index, v.key)
+    print(t.key)
+    return t.key, s, t
 
 
 
@@ -435,14 +442,13 @@ def stMerge(g,s,t):
     new_matrix[t.id][s.id] = 0
     g.merged_node.add(s)
     g.null_node.add(t)
+    g.lista_nodi_updated.remove(t)
 
-    for nodo in g.lista_nodi_id:
-        if g.adj_matrix[s.id][nodo] != 0:
-            new_matrix[s.id][nodo] += new_matrix[t.id][nodo]
-        if g.adj_matrix[nodo][s.id] != 0:
-            new_matrix[nodo][s.id] += new_matrix[nodo][t.id]
-        new_matrix[t.id][nodo] = 0 
-        new_matrix[nodo][t.id] = 0
+    for nodo in g.lista_nodi_updated:
+        new_matrix[s.id][nodo.id] += new_matrix[t.id][nodo.id]
+        new_matrix[nodo.id][s.id] += new_matrix[nodo.id][t.id]
+        new_matrix[t.id][nodo.id] = 0 
+        new_matrix[nodo.id][t.id] = 0
 
     g.merged_matrix = new_matrix
     g.merged_n_nodi = g.merged_n_nodi - 1
@@ -474,11 +480,28 @@ print("-"*50)
 #     if g.n_nodi == 10 and g.n_archi == 14:
 #         print(g.adj_matrix[1][2])
 #         print(g.adj_matrix[1][3])
-for grafo in lista_grafi:
-    print("faccio grafo da", grafo.n_nodi)
-    ripetizioni = round(math.log(grafo.n_nodi)**2)
-    print(ripetizioni)
-    kargerAndStein(grafo, ripetizioni)
 
-print_m(lista_grafi[5].adj_matrix)
-#globalMinCut(lista_grafi[0])
+# for grafo in lista_grafi:
+#     print("faccio grafo da", grafo.n_nodi)
+#     ripetizioni = round(math.log(grafo.n_nodi)**2)
+#     print(ripetizioni)
+#     kargerAndStein(grafo, ripetizioni)
+
+# print_m(lista_grafi[5].adj_matrix)
+globalMinCut(lista_grafi[0])
+print_m(lista_grafi[0].merged_matrix)
+#print(r)
+
+#print_m(lista_grafi[0].adj_matrix)
+#peso, s, t = stMinCut(lista_grafi[0])
+#print("peso", peso)
+#print("s", s.id)
+#print("t", t.id)
+# i = -1
+# for nodo in lista_grafi[0].adj_matrix[2]:
+#     i += 1
+#     if nodo != 0:
+#         print("nodo v", i)
+#     print(nodo)
+
+
