@@ -389,18 +389,24 @@ def kargerAndStein(g, k):
 
 def globalMinCut(g):
     if g.merged_n_nodi == 2:
-        print([i.id for i in g.lista_nodi_updated])
+        #print([i.id for i in g.lista_nodi_updated])
+        g.totPeso = g.adj_matrix[g.lista_nodi_updated[0].id][g.lista_nodi_updated[1].id]
+        #print(g.totPeso)
         return g
     else:
-        peso_g1, s, t = stMinCut(g)
+        g1, s, t = stMinCut(g)
+        #print("g1", g1.totPeso)
         g2 = globalMinCut(stMerge(g, s, t))
+        #print("g2", g2.totPeso)
         #print("-"*50)
         #print("nodi null", [i.id for i in g2.null_node])
         #print("nodi merged", s.id, t.id, [i.id for i in g2.merged_node])
         #print("-"*50)
-        if(peso_g1 < g2.totPeso):
-            return peso_g1
+        if(g1.totPeso < g2.totPeso):
+            #print("peso stMin minore")
+            return g1
         else:
+            #print("peso global minore")
             return g2
         
         
@@ -430,8 +436,10 @@ def stMinCut(g):
                     v.key += g.merged_matrix[u.id][v.id]
                     index = v.heapIndex  #ottengo la sua posizione all'interno dell'heap
                     heapIncreaseKey(q, index, v.key)
-    print(t.key)
-    return t.key, s, t
+    
+    #return min_peso, s, t
+    g.totPeso = s.key
+    return g, s, t
 
 
 
@@ -488,9 +496,13 @@ print("-"*50)
 #     kargerAndStein(grafo, ripetizioni)
 
 # print_m(lista_grafi[5].adj_matrix)
-globalMinCut(lista_grafi[0])
-print_m(lista_grafi[0].merged_matrix)
-#print(r)
+i = 0
+while i < len(lista_grafi):
+    g = globalMinCut(lista_grafi[i])
+    print("n_nodi:", g.n_nodi,"|" , "min_cut :", g.totPeso)
+    #print_m(lista_grafi[i].merged_matrix)
+    i += 1
+
 
 #print_m(lista_grafi[0].adj_matrix)
 #peso, s, t = stMinCut(lista_grafi[0])
