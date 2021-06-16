@@ -367,7 +367,6 @@ def recursiveContract(g):
     t = round(g.merged_n_nodi/math.sqrt(2) + 1)
     
     for i in range(2):
-
         g = contract(g, t)
         w.append(recursiveContract(g))
     return min(w)
@@ -466,6 +465,27 @@ def stMerge(g,s,t):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ######################## MAIN ########################
 print("-"*50)
 parsing(directory)
@@ -489,19 +509,41 @@ print("-"*50)
 #         print(g.adj_matrix[1][2])
 #         print(g.adj_matrix[1][3])
 
-# for grafo in lista_grafi:
-#     print("faccio grafo da", grafo.n_nodi)
-#     ripetizioni = round(math.log(grafo.n_nodi)**2)
-#     print(ripetizioni)
-#     kargerAndStein(grafo, ripetizioni)
+# for i in range(len(lista_grafi)):
+#     ripetizioni = round(math.log(lista_grafi[i].n_nodi)**2)
+#     #print(ripetizioni)
+#     mincut = kargerAndStein(lista_grafi[i], ripetizioni)
+#     #print("faccio grafo da:", lista_grafi[i].n_nodi,"|", "min_cut: ", mincut)
+#     if i <= 10:
+#         print_m(lista_grafi[i].adj_matrix)
 
-# print_m(lista_grafi[5].adj_matrix)
+
+
+
+
+res = []
 i = 0
 while i < len(lista_grafi):
     g = globalMinCut(lista_grafi[i])
-    print("n_nodi:", g.n_nodi,"|" , "min_cut :", g.totPeso)
-    #print_m(lista_grafi[i].merged_matrix)
+    res.append(g.totPeso)
+    #print(g.n_nodi, g.totPeso)
     i += 1
+
+
+table = []
+table.append([grafo.n_nodi for grafo in lista_grafi])     #table[0]
+table.append(res)                                         #table[1]
+
+
+res_table = []
+for i in range(len(lista_grafi)):
+    res_table.append([table[0][i], table[1][i]])
+
+#print()
+print(tabulate(res_table, headers= ["numero nodi", "stoer_wagner"], tablefmt='pretty'))
+
+
+
 
 
 #print_m(lista_grafi[0].adj_matrix)
