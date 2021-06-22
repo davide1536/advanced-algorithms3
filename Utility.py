@@ -2,11 +2,17 @@
 #capitolo 21.3/4 del libro
 import copy
 import random
+import numpy as np
 from Nodo import Nodo
 from Grafo import Grafo
 from tabulate import tabulate
 
-
+def getPesoTaglio(g):
+    matrix = np.array(g.adj_matrix)
+    c_matrix = matrix[1:,1:]
+    indices = np.nonzero(c_matrix)
+    #print(c_matrix [indices[0][0], indices[0][1]])
+    return c_matrix [indices[0][0], indices[0][1]]
 ################################## Merge + MergeSort ##################################
 
 def binarySearch(c, low, high, element):

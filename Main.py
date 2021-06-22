@@ -16,7 +16,8 @@ import matplotlib.pyplot as plt
 import copy
 import time
 from Utility import *
-from Heap import *
+from heap import *
+from datetime import datetime
 
 #lista di grafi prim
 p_g = []
@@ -294,7 +295,6 @@ def plot_graph():
 
     return graphs_groupped, times
 #---------------------------------------------------------------Karger & Stein---------------------------------------------------------------
-
 def gradoPesato(g, nodi):
     for u in nodi:
         for peso in g.adj_matrix[u.id][1:]:
@@ -308,6 +308,8 @@ def randomSelect(g,c):
     #     print("lista c:", i)
     index = binarySearch(c, 0, len(c)-1, r)
     vertex = g.getListaNodi()[index]
+
+
     #print("il vertice corrispondente e'", vertex.id)
     return vertex
 
@@ -340,10 +342,12 @@ def contractEdge(g, edge):
     g.adj_matrix[u.id][v.id] = 0
     g.adj_matrix[v.id][u.id] = 0
     for i in range(1,len(g.adj_matrix)):
-        g.adj_matrix[u.id][i] = g.adj_matrix[u.id][i] + g.adj_matrix[v.id][i]
-        g.adj_matrix[i][u.id] = g.adj_matrix[i][u.id] + g.adj_matrix[i][v.id]
-        g.adj_matrix[v.id][i] = 0
-        g.adj_matrix[i][v.id] = 0 
+        if (i != u.id and i != v.id):
+
+            g.adj_matrix[u.id][i] = g.adj_matrix[u.id][i] + g.adj_matrix[v.id][i]
+            g.adj_matrix[i][u.id] = g.adj_matrix[i][u.id] + g.adj_matrix[i][v.id]
+            g.adj_matrix[v.id][i] = 0
+            g.adj_matrix[i][v.id] = 0 
     
     g.merged_n_nodi -= 1
 
@@ -362,25 +366,42 @@ def recursiveContract(g):
     w = []
     n = g.merged_n_nodi
     if n <= 6:
-        g = contract(g, 2)
-        return 1 #da cambiare
+        gPrime = copy.deepcopy(contract(g, 2))
+        peso = getPesoTaglio(gPrime)
+        return peso
+        
     t = round(g.merged_n_nodi/math.sqrt(2) + 1)
     
-    for i in range(2):
-        g = contract(g, t)
-        w.append(recursiveContract(g))
-    return min(w)
+    #for i in range(2):
+    g1 = contract(g, t)
+    g2 = contract(g,t)   
+
+    cut = min(recursiveContract(g1), recursiveContract(g2))       
+
+    return cut
 
 
 def kargerAndStein(g, k):
     gradoPesato(g, g.getListaNodi())
-    g2 = g
     minCut = float('inf')
+    gMin = copy.deepcopy(g)
+    start_time = perf_counter_ns()
+
     for i in range(k):
+        random.seed(datetime.now())
+        g2 = copy.deepcopy(g)
+
         cut = recursiveContract(g2)
+        print(cut)
         if cut < minCut:
+            discoveredIteration = i
+            discoveredTime = perf_counter_ns()
+            gMin = g2
             minCut = cut
-    return minCut
+
+    discoveredTime = discoveredTime - start_time
+
+    return minCut, gMin, discoveredIteration, discoveredTime
 
 
 
@@ -523,27 +544,33 @@ print("-"*50)
 
 res = []
 i = 0
-while i < len(lista_grafi):
-    g = globalMinCut(lista_grafi[i])
-    res.append(g.totPeso)
-    #print(g.n_nodi, g.totPeso)
-    i += 1
+# while i < len(lista_grafi):
+#     g = globalMinCut(lista_grafi[i])
+#     res.append(g.totPeso)
+#     #print(g.n_nodi, g.totPeso)
+#     i += 1
 
 
-table = []
-table.append([grafo.n_nodi for grafo in lista_grafi])     #table[0]
-table.append(res)                                         #table[1]
+# table = []
+# table.append([grafo.n_nodi for grafo in lista_grafi])     #table[0]
+# table.append(res)                                         #table[1]
 
 
-res_table = []
-for i in range(len(lista_grafi)):
-    res_table.append([table[0][i], table[1][i]])
+# res_table = []
+# for i in range(len(lista_grafi)):
+#     res_table.append([table[0][i], table[1][i]])
 
-#print()
-print(tabulate(res_table, headers= ["numero nodi", "stoer_wagner"], tablefmt='pretty'))
+# #print()
+#print(tabulate(res_table, headers= ["numero nodi", "stoer_wagner"], tablefmt='pretty'))
+# for i in lista_grafi[0].adj_matrix:
+#         print (i)
 
-
-
+k = round(math.log(lista_grafi[29].n_nodi)**2)
+res = kargerAndStein(lista_grafi[29], k)
+print("soluzione")
+print(res[0])
+print("trovata dopo:")
+print(res[2], "iterazioni e", res[3], "nanosecondi")
 
 
 #print_m(lista_grafi[0].adj_matrix)
