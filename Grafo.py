@@ -3,6 +3,7 @@ from Nodo import Nodo
 import copy
 class Grafo:
     def __init__(self):
+        self.nome = ""
         self.n_nodi = 0
         self.n_archi = 0
         self.lista_nodi_obj = []

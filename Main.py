@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import copy
 import time
 from Utility import *
-from heap import *
+from Heap import *
 from datetime import datetime
 
 #lista di grafi prim
@@ -113,10 +113,10 @@ def crea_grafi(path):
 
 
     #setto gli attributi dell'arco
+    g.nome = path[:-4]
     g.lista_nodi_updated = []
     g.lista_merged = []
-    g.merged_matrix = [] #matrice con nodo compresso
-    g.merged_matrix[:] = adj_matrix
+    g.merged_matrix = [row[:] for row in adj_matrix]
     g.id2Node = id2Node
     g.lista_archi = lista_archi
     g.lista_nodi_obj = sorted(lista_nodi_obj, key=lambda nodo: (nodo.id))
@@ -294,11 +294,14 @@ def plot_graph():
     plt.show()
 
     return graphs_groupped, times
+
+
 #---------------------------------------------------------------Karger & Stein---------------------------------------------------------------
 def gradoPesato(g, nodi):
     for u in nodi:
         for peso in g.adj_matrix[u.id][1:]:
             u.d = u.d + peso
+
 
 def randomSelect(g,c):
     #print("massimo di c:", max(c))
@@ -329,7 +332,10 @@ def edgeSelect(g):
     for v in g.getListaNodi():
         tot += g.adj_matrix[u.id][v.id]
         pesiComulativi.append(tot)
+        
     v = randomSelect(g,pesiComulativi)
+
+    #print("i nodi da unire sono: ", u.id, "e ", v.id)
 
     return u,v
 
@@ -366,7 +372,10 @@ def recursiveContract(g):
     w = []
     n = g.merged_n_nodi
     if n <= 6:
-        gPrime = copy.deepcopy(contract(g, 2))
+        gPrime = contract(g, 2)
+        print ("matrice grafo contratto: \n")
+        # for i in gPrime.adj_matrix:
+        #     print(i)
         peso = getPesoTaglio(gPrime)
         return peso
         
@@ -392,7 +401,7 @@ def kargerAndStein(g, k):
         g2 = copy.deepcopy(g)
 
         cut = recursiveContract(g2)
-        print(cut)
+        print("il taglio trovato: ",cut)
         if cut < minCut:
             discoveredIteration = i
             discoveredTime = perf_counter_ns()
@@ -410,7 +419,7 @@ def kargerAndStein(g, k):
 def globalMinCut(g):
     if g.merged_n_nodi == 2:
         #print([i.id for i in g.lista_nodi_updated])
-        g.totPeso = g.adj_matrix[g.lista_nodi_updated[0].id][g.lista_nodi_updated[1].id]
+        g.totPeso = g.merged_matrix[g.lista_nodi_updated[0].id][g.lista_nodi_updated[1].id]
         #print(g.totPeso)
         return g
     else:
@@ -436,7 +445,7 @@ def stMinCut(g):
     index = 0
     for nodo in g.lista_nodi_updated:
         nodo.in_h = 1
-        nodo.key = 0  #float('inf') indica un valore superiore a qualsiasi altro valore
+        nodo.key = 0
         nodo.heapIndex = index  #per non usare la funzione 'index' 
         index += 1
     q = Heap(g.lista_nodi_updated)
@@ -464,8 +473,7 @@ def stMinCut(g):
 
 
 def stMerge(g,s,t):
-    new_matrix = [] #matrice con nodo compresso
-    new_matrix[:] = g.adj_matrix
+    new_matrix = [row[:] for row in g.adj_matrix]  #matrice con nodo compresso
     new_matrix[s.id][t.id] = 0
     new_matrix[t.id][s.id] = 0
     g.merged_node.add(s)
@@ -477,6 +485,7 @@ def stMerge(g,s,t):
         new_matrix[nodo.id][s.id] += new_matrix[nodo.id][t.id]
         new_matrix[t.id][nodo.id] = 0 
         new_matrix[nodo.id][t.id] = 0
+
 
     g.merged_matrix = new_matrix
     g.merged_n_nodi = g.merged_n_nodi - 1
@@ -490,99 +499,71 @@ def stMerge(g,s,t):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ######################## MAIN ########################
+
 print("-"*50)
 parsing(directory)
 print("fine parsing")
 
 print("numero grafi", len(lista_grafi))
 
-lista_grafi = sorted(lista_grafi, key=lambda grafo: (grafo.n_nodi, grafo.n_archi))
+#lista_grafi = sorted(lista_grafi, key=lambda grafo: (grafo.n_nodi, grafo.n_archi))
+lista_grafi = sorted(lista_grafi, key=lambda grafo: (grafo.nome))
 
 print("-"*50)
 
-# n_tot = 0
-# a_tot = 0
-# for g in lista_grafi:
-#     n_tot += g.n_nodi
-#     a_tot += g.n_archi 
-# print(n_tot, a_tot) #11640 15452
-
-# for g in lista_grafi:
-#     if g.n_nodi == 10 and g.n_archi == 14:
-#         print(g.adj_matrix[1][2])
-#         print(g.adj_matrix[1][3])
-
-# for i in range(len(lista_grafi)):
-#     ripetizioni = round(math.log(lista_grafi[i].n_nodi)**2)
-#     #print(ripetizioni)
-#     mincut = kargerAndStein(lista_grafi[i], ripetizioni)
-#     #print("faccio grafo da:", lista_grafi[i].n_nodi,"|", "min_cut: ", mincut)
-#     if i <= 10:
-#         print_m(lista_grafi[i].adj_matrix)
 
 
+############################# KARGER STAIN #############################
 
 
-
-res = []
-i = 0
-# while i < len(lista_grafi):
-#     g = globalMinCut(lista_grafi[i])
-#     res.append(g.totPeso)
-#     #print(g.n_nodi, g.totPeso)
-#     i += 1
-
-
-# table = []
-# table.append([grafo.n_nodi for grafo in lista_grafi])     #table[0]
-# table.append(res)                                         #table[1]
-
-
-# res_table = []
-# for i in range(len(lista_grafi)):
-#     res_table.append([table[0][i], table[1][i]])
-
-# #print()
-#print(tabulate(res_table, headers= ["numero nodi", "stoer_wagner"], tablefmt='pretty'))
-# for i in lista_grafi[0].adj_matrix:
-#         print (i)
-
-k = round(math.log(lista_grafi[29].n_nodi)**2)
-res = kargerAndStein(lista_grafi[29], k)
+k = round(math.log(lista_grafi[0].n_nodi)**2)
+res = kargerAndStein(lista_grafi[0], k)
 print("soluzione")
 print(res[0])
 print("trovata dopo:")
 print(res[2], "iterazioni e", res[3], "nanosecondi")
 
 
+
+############################# STOER WAGNER #############################
+
+
+
+#STOER      PRINT
+lista_grafi = []
+parsing(directory)
+print("fine parsing")
+
+print("numero grafi", len(lista_grafi))
+
+#lista_grafi = sorted(lista_grafi, key=lambda grafo: (grafo.n_nodi, grafo.n_archi))
+lista_grafi = sorted(lista_grafi, key=lambda grafo: (grafo.nome))
+
+print("-"*50)
+
+
+res = []
+i = 0
+while i < len(lista_grafi)-40:
+    g = globalMinCut(lista_grafi[i])
+    res.append(g.totPeso)
+    #print(g.n_nodi, g.totPeso)
+    i += 1
+
+
+table = []
+table.append([grafo.nome for grafo in lista_grafi])
+#table.append([grafo.n_nodi for grafo in lista_grafi])     #table[0]
+table.append([[i.id for i in grafo.lista_nodi_updated] for grafo in lista_grafi])
+table.append(res)                                         #table[1]
+
+
+res_table = []
+for i in range(len(lista_grafi)-40):
+    res_table.append([table[0][i], table[1][i], table[2][i]])
+
+#print()
+print(tabulate(res_table, headers= ["nome grafo", "nodi", "stoer_wagner"], tablefmt='pretty'))
+
 #print_m(lista_grafi[0].adj_matrix)
-#peso, s, t = stMinCut(lista_grafi[0])
-#print("peso", peso)
-#print("s", s.id)
-#print("t", t.id)
-# i = -1
-# for nodo in lista_grafi[0].adj_matrix[2]:
-#     i += 1
-#     if nodo != 0:
-#         print("nodo v", i)
-#     print(nodo)
-
-

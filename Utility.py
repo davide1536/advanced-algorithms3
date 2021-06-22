@@ -11,6 +11,7 @@ def getPesoTaglio(g):
     matrix = np.array(g.adj_matrix)
     c_matrix = matrix[1:,1:]
     indices = np.nonzero(c_matrix)
+    print("i nodi rimasti sono:", indices[0][0]+1, "e ", indices[0][1]+1)
     #print(c_matrix [indices[0][0], indices[0][1]])
     return c_matrix [indices[0][0], indices[0][1]]
 ################################## Merge + MergeSort ##################################
