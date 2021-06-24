@@ -57,7 +57,7 @@ def heapIncreaseKey(h, i, key):
     if key < h.vector[i].key:
         exit("la nuova chiave è più piccola di quella corrente")
     h.vector[i].key = key
-    while i>0 and h.vector[parent(i)].key < h.vector[i].key:
+    while i > 0 and h.vector[parent(i)].key < h.vector[i].key:
         #salvo gli indici
         currentIndex = h.vector[i].heapIndex
         parentIndex = h.vector[parent(i)].heapIndex

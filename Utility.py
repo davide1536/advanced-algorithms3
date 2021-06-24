@@ -11,7 +11,8 @@ def getPesoTaglio(g):
     matrix = np.array(g.adj_matrix)
     c_matrix = matrix[1:,1:]
     indices = np.nonzero(c_matrix)
-    print("i nodi rimasti sono:", indices[0][0]+1, "e ", indices[0][1]+1)
+    print ("numero di elementi diversi da zero: ",np.count_nonzero(c_matrix))
+    #print("i nodi rimasti sono:", indices[0][0]+1, "e ", indices[0][1]+1)
     #print(c_matrix [indices[0][0], indices[0][1]])
     return c_matrix [indices[0][0], indices[0][1]]
 ################################## Merge + MergeSort ##################################
@@ -19,6 +20,9 @@ def getPesoTaglio(g):
 def binarySearch(c, low, high, element):
     if high >= low:
         mid = (high + low) // 2
+
+        if element < c[low]:
+            return low
 
         if mid < len(c)-1:
             if c[mid] <= element and c[mid+1] > element:
