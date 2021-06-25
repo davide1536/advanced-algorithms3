@@ -134,7 +134,7 @@ def crea_grafi(path):
 def measure_run_time(n_instances, graphs, algorithm):
     sum_times = 0
 
-    if graphs[0].n_nodi <=100:         #per avere valori più precisi le istanze con un basso numero di nodi vengono ripetute più volte
+    if graphs[0].n_nodi <=20:         #per avere valori più precisi le istanze con un basso numero di nodi vengono ripetute più volte
         iterations = 30
     else:
         iterations = 1
@@ -150,9 +150,9 @@ def measure_run_time(n_instances, graphs, algorithm):
     print("testing graph size: ", graphs[0].n_nodi)
     for i in range(n_instances):
         print("istanza numbero: ",i)
-        if algorithm == "prim":
+        if algorithm == "kargerAndStein":
             gc.disable()
-            nodo_casuale = next(iter(graphs[i].lista_nodi))    #casuale perchè il set lista_nodi cambia ordine ad ogni parsing
+            #nodo_casuale = next(iter(graphs[i].lista_nodi))    #casuale perchè il set lista_nodi cambia ordine ad ogni parsing
 
             start_time = perf_counter_ns()
             m = 0
@@ -220,7 +220,7 @@ def measurePerformance():
         arches = 0
         nodes = 0
 
-    algorithmsToTest = ["prim", "Kruskal", "NaiveKruskal"]
+    algorithmsToTest = ["kargerAndStein","storeAndWagner"]
     totTimes = []
     totRatios = []
     totConstant = []
@@ -231,11 +231,11 @@ def measurePerformance():
         ratios = [None] + [round(times[i+1]/times[i],3) for i in range(len(sizes)-1)] 
         totRatios.append(ratios)
 
-        if algorithm == "NaiveKruskal":
-            totConstant.append([round(times[i]/(sizes[i][1] *sizes[i][0]),3) for i in range(len(sizes))])
+        if algorithm == "kargerAndStein":
+            totConstant.append([round(times[i]/((sizes[i][0]**2) * math.log(sizes[i][0])**3),3) for i in range(len(sizes))])
 
         else:
-            totConstant.append([round(times[i]/(sizes[i][1] * math.log(sizes[i][0])),3) for i in range(len(sizes))])
+            totConstant.append([round(times[i]/(sizes[i][1] * sizes[i][0] + sizes[i][0]**2 * math.log(sizes[i][0])),3) for i in range(len(sizes))])
 
     return totTimes, totRatios, totConstant, sizes, graphs_groupped
     
@@ -245,7 +245,7 @@ def plot_graph():
     
     #misuro le performance per ogni algoritmo, i valori times, ratios, constant sono matrici di dimensione 4*n n sono il numero di dimensioni dei grafi
     [times, ratios, constant, sizes, graphs_groupped] = measurePerformance()
-    algorithmsToTest = ["prim","Kruskal", "NaiveKruskal"]
+    algorithmsToTest = ["kargerAndStein","storeAndWagner"]
 
     for i in range(len(algorithmsToTest)):
         print ("Algoritmo:", algorithmsToTest[i])
@@ -263,12 +263,13 @@ def plot_graph():
     #grafico dei tempi
         reference = []
         print("costante utilizzata per calcolare la reference :", algorithmsToTest[i], " ",constant[i][len(constant[0]) - 1] )
-        if algorithmsToTest[i] == "NaiveKruskal":
+
+        if algorithmsToTest[i] == "kargerAndStein":
             for j in range (len(sizes)):
-                reference.append (constant[i][len(constant[0]) - 1] * sizes[j][1] * sizes[j][0])
+                reference.append (constant[i][len(constant[0]) - 1] * (sizes[j][0]**2) * math.log(sizes[j][0])**3)
         else:
             for j in range (len(sizes)):
-                reference.append (constant[i][len(constant[0]) - 1] * sizes[j][1] * math.log(sizes[j][0]))
+                reference.append (constant[i][len(constant[0]) - 1] * sizes[j][1] * sizes[j][0] + sizes[j][0]**2 * math.log(sizes[j][0]))
 
         plt.plot(graphs_groupped.keys(), times[i], graphs_groupped.keys(), reference)
         plt.title("performance " + algorithmsToTest[i])
@@ -297,16 +298,7 @@ def plot_graph():
 
 
 #---------------------------------------------------------------Karger & Stein---------------------------------------------------------------
-def naiveSearch(c, r):
-    for i, element in enumerate(c):
-        if i< len(c)-1:
-            if (r < c[0]):
-                for j, element in enumerate(c):
-                    if (c[j] != c[j+1]):
-                        return j+1
 
-            if (c[i] <= r and c[i+1] > r):
-                return i+1
             
 
 def gradoPesato(g, nodi):
@@ -316,29 +308,18 @@ def gradoPesato(g, nodi):
 
 
 def randomSelect(g,c):
-    #print("massimo di c:", max(c))
+    
     r = random.randint(0, c[len(c)-1])
-    print("elemento da prendere", r)
-    #print("elemento casuale:", r)
-    # for i in c:
-    #     print("lista c:", i)
-    index = binarySearch(c, 0, len(c)-1, r)
-    #print("elementi: ",c[index], c[index-1])
+
+    
+    r = random.randint(0, c[len(c)-1])
+    avg = sum(c) / len(c)
+   
+    index = binarySearch(c, 0, len(c)-1, r, avg)
+    
     vertex = g.getListaNodi()[index]
     
-    naiveIndex = naiveSearch(c, r)
-    if naiveIndex == None:
-        print(c)
-        
-    naiveVertex = g.getListaNodi()[naiveIndex]
-
-    print("elementi selezionati naive:", c[naiveIndex-1], c[naiveIndex])
-    print("elementi selezionati :", c[index-1], c[index])
-
-
-
-    #print("il vertice corrispondente e'", vertex.id)
-    return naiveVertex
+    return vertex
 
 
 def edgeSelect(g):
@@ -359,16 +340,15 @@ def edgeSelect(g):
         
     v = randomSelect(g,pesiComulativi)
 
-    #print("i nodi da unire sono: ", u.id, "e ", v.id)
 
-    return u,v
+    return u,v, pesiComulativi
 
 
-def contractEdge(g, edge):
+def contractEdge(g, edge, c):
     u = edge[0]
     v = edge[1]
     if  g.adj_matrix[u.id][v.id] == 0:
-        print("nodo gia selezionato :(")
+        print("nodo gia selezionato ")
         exit(0)
 
     u.d = u.d + v.d - (2*g.adj_matrix[u.id][v.id])
@@ -380,7 +360,6 @@ def contractEdge(g, edge):
 
             g.adj_matrix[u.id][i] = g.adj_matrix[u.id][i] + g.adj_matrix[v.id][i]
             g.adj_matrix[i][u.id] = g.adj_matrix[i][u.id] + g.adj_matrix[i][v.id]
-            #print ("il peso del nodo ",u.id,"(unito con",v.id, ")connesso al nodo ",i,"diventa ",g.adj_matrix[u.id][i] + g.adj_matrix[v.id][i])
             g.adj_matrix[v.id][i] = 0
             g.adj_matrix[i][v.id] = 0 
     
@@ -390,9 +369,9 @@ def contractEdge(g, edge):
 def contract(g, k):
     n = g.merged_n_nodi
     for i in range(n-k):
-        u,v = edgeSelect(g)
+        u,v,c = edgeSelect(g)
         edge = [u,v]
-        contractEdge(g, edge)
+        contractEdge(g, edge, c)
     return g
 
 
@@ -402,31 +381,20 @@ def recursiveContract(g):
     n = g.merged_n_nodi
     if n <= 6:
         gPrime = contract(g, 2)
-        #print ("matrice grafo contratto: \n")
-        # for i in gPrime.adj_matrix:
-        #     print(i)
         peso = getPesoTaglio(gPrime)
-        #print("peso del taglio minimo:", peso)
         return peso
         
     t = round(g.merged_n_nodi/math.sqrt(2) + 1)
     
-    #for i in range(2):
     g1 = contract(g, t)
     g2 = contract(g,t)
-    w.append(recursiveContract(g1), recursiveContract(g2))
-        #g2 = contract(g,t)   
-
-    #cut = min(recursiveContract(g1), recursiveContract(g2))       
-    cut = min(w)
-    return cut
+    return min(recursiveContract(g1), recursiveContract(g2))
 
 
 def kargerAndStein(g, k):
     gradoPesato(g, g.getListaNodi())
     minCut = float('inf')
     gMin = Grafo()
-    #gMin = copy.deepcopy(g)
     start_time = perf_counter_ns()
 
     for i in range(k):
@@ -635,23 +603,23 @@ print("-"*50)
 
 ############################# KARGER STAIN #############################
 
-#for grafo in lista_grafi:
-# print ("nodi numero: ",lista_grafi[35].n_nodi)
-# k = round(math.log(lista_grafi[35].n_nodi)**2)
-# res = kargerAndStein(lista_grafi[35], k)
-# print("soluzione")
-# print(res[0])
-# print("trovata dopo:")
-# print(res[2], "iterazioni e", res[3], "nanosecondi")
+for grafo in lista_grafi:
+    print ("nodi numero: ",grafo.n_nodi)
+    k = round(math.log(grafo.n_nodi)**2)
+    res = kargerAndStein(grafo, k)
+    print("soluzione")
+    print(res[0])
+    print("trovata dopo:")
+    print(res[2], "iterazioni e", res[3], "nanosecondi")
 
 
 
 ############################# STOER WAGNER #############################
 
 
-for i in range(len(lista_grafi)-40):
-    rip = globalMinCut(lista_grafi[i])
-    print(rip.totPeso)
+# for i in range(len(lista_grafi)-40):
+#     rip = globalMinCut(lista_grafi[i])
+#     print(rip.totPeso)
 
 
 """ #STOER      PRINT

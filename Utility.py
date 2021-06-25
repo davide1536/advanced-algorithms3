@@ -11,29 +11,50 @@ def getPesoTaglio(g):
     matrix = np.array(g.adj_matrix)
     c_matrix = matrix[1:,1:]
     indices = np.nonzero(c_matrix)
-    print ("numero di elementi diversi da zero: ",np.count_nonzero(c_matrix))
+    #print ("numero di elementi diversi da zero: ",np.count_nonzero(c_matrix))
     #print("i nodi rimasti sono:", indices[0][0]+1, "e ", indices[0][1]+1)
     #print(c_matrix [indices[0][0], indices[0][1]])
     return c_matrix [indices[0][0], indices[0][1]]
 ################################## Merge + MergeSort ##################################
 
-def binarySearch(c, low, high, element):
+def binarySearch(c, low, high, element, avg):
     if high >= low:
         mid = (high + low) // 2
+        # print("indice medio:", mid)
+        # print("elemento medio:", c[mid])
+        # print("elemento dopo:", c[mid+1])
+        # print("\n")
 
-        if element < c[low]:
+        if (element < c[low] and c[low] != 0):
+            #print("il primo!")
             return low
+        
+        # if element == c[high]:
+        #     return high
 
         if mid < len(c)-1:
-            if c[mid] <= element and c[mid+1] > element:
+            if ((c[mid] <= element and c[mid+1] > element) or (c[mid] < element and c[mid+1] >= element)):
                 #print("elementi trovati binary:", c[mid], c[mid+1])
                 return mid + 1 
         
             elif c[mid] > element:
-                return binarySearch(c, low, mid-1, element)
+                #print("elemento maggiore o uguale")
+                return binarySearch(c, low, mid-1, element, avg)
 
-            else:
-                return binarySearch(c, mid+1, high, element)
+            elif c[mid]< element:
+
+                #print("elemento minore ")
+                return binarySearch(c, mid+1, high, element, avg)
+            
+            elif c[mid] == element:
+                #print("MEDIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                if element < avg:
+                    return binarySearch(c, mid+1, high, element, avg)
+                else:
+                    return binarySearch(c, low, mid-1, element, avg)
+            
+
+
         else:
             return mid
 
