@@ -19,17 +19,18 @@ from Utility import *
 from Heap import *
 from datetime import datetime
 
-#lista di grafi prim
+#lista di grafi stoer wagner
 res_stoer_wagner = []
-
-#lista grafi kruskal
+#lista grafi karger stain
 res_karger_stain = []
 
 
-#lista dei tempi di prim
-p_t = [] 
-#lista dei tempi di kruskal
-k_t = []
+#lista dei tempi di stoer wagner
+time_stoer_wagner = [] 
+#lista dei tempi di karger stain
+time_karger_stain = []
+discovery_times = []
+discovery_iterations = []
 
 
 directory = "dataset/"
@@ -136,13 +137,12 @@ def measure_run_time(n_instances, graphs, algorithm):
         iterations = 30
     else:
         iterations = 1
-    #liste per confrontare gli algoritmi
-    global p_g
-    global k_g
-    global kn_g
-    global p_t 
-    global k_t 
-    global kn_t
+    #liste per confrontare gli algoritmi                          
+    # global p_g
+    # global k_g
+    # global kn_g
+    # global sw_t 
+    # global ks_t 
 
 
     print("testing graph size: ", graphs[0].n_nodi)
@@ -151,40 +151,53 @@ def measure_run_time(n_instances, graphs, algorithm):
         if algorithm == "kargerAndStein":
             gc.disable()
             #nodo_casuale = next(iter(graphs[i].lista_nodi))    #casuale perchè il set lista_nodi cambia ordine ad ogni parsing
-
+            
             start_time = perf_counter_ns()
             m = 0
             while m < iterations:
                 #prim(graphs[i],graphs[i].getNodo(nodo_casuale))
+                k = round(math.log(graphs[i].n_nodi)**2)
+                res = kargerAndStein(graphs[i], k)
                 m+=1
+
             end_time = perf_counter_ns()
             #p_g.append(prim(graphs[i],graphs[i].getNodo(nodo_casuale)).getGrafoPrim())
-            p_t.append(round((end_time - start_time)/iterations//1000, 3))
+            discovery_time = res[3]
+            discovery_iteration = res[2]
+
+            discovery_times.append(discovery_time)
+            discovery_iterations.append(discovery_iteration)
+            time_karger_stain.append(round((end_time - start_time)/iterations//1000, 3))
             gc.enable()
 
-        if algorithm == "NaiveKruskal":
+        if algorithm == "storeAndWagner":            
             gc.disable()
-            start_time = perf_counter_ns()
             j = 0
+            newGrafi = []
+            
+            for k in range(iterations):
+                newGrafi.append(copy.deepcopy(graphs[i]))
+
+            start_time = perf_counter_ns()
             while j < iterations:
-                #naiveKruskal(graphs[i])
+                globalMinCut(newGrafi[j])
                 j+=1
             end_time = perf_counter_ns()
             #kn_g.append(naiveKruskal(graphs[i]))
-            kn_t.append(round((end_time - start_time)/iterations//1000, 3))
+            time_stoer_wagner.append(round((end_time - start_time)/iterations//1000, 3))
             gc.enable()
 
-        if algorithm == "Kruskal":
-            gc.disable()
-            start_time = perf_counter_ns()
-            k = 0
-            while k < iterations:
-                #kruskal(graphs[i])     
-                k += 1
-            end_time = perf_counter_ns()
-            #k_g.append(kruskal(graphs[i]))
-            k_t.append(round((end_time - start_time)/iterations//1000, 3))
-            gc.enable()
+        # if algorithm == "Kruskal":
+        #     gc.disable()
+        #     start_time = perf_counter_ns()
+        #     k = 0
+        #     while k < iterations:
+        #         #kruskal(graphs[i])     
+        #         k += 1
+        #     end_time = perf_counter_ns()
+        #     #k_g.append(kruskal(graphs[i]))
+        #     k_t.append(round((end_time - start_time)/iterations//1000, 3))
+        #     gc.enable()
 
         sum_times += (end_time - start_time)/iterations
 
@@ -218,6 +231,7 @@ def measurePerformance():
         arches = 0
         nodes = 0
 
+    #algorithmsToTest = ["kargerAndStein","storeAndWagner"]
     algorithmsToTest = ["kargerAndStein","storeAndWagner"]
     totTimes = []
     totRatios = []
@@ -233,7 +247,7 @@ def measurePerformance():
             totConstant.append([round(times[i]/((sizes[i][0]**2) * math.log(sizes[i][0])**3),3) for i in range(len(sizes))])
 
         else:
-            totConstant.append([round(times[i]/(sizes[i][1] * sizes[i][0] + sizes[i][0]**2 * math.log(sizes[i][0])),3) for i in range(len(sizes))])
+            totConstant.append([round(times[i]/(sizes[i][1] * sizes[i][0] * math.log(sizes[i][0])),3) for i in range(len(sizes))])
 
     return totTimes, totRatios, totConstant, sizes, graphs_groupped
     
@@ -261,31 +275,26 @@ def plot_graph():
     #grafico dei tempi
         reference = []
         print("costante utilizzata per calcolare la reference :", algorithmsToTest[i], " ",constant[i][len(constant[0]) - 1] )
+        print("ratio finale per",algorithmsToTest[i],": ", times[i][len(sizes) -1] / times[i][len(sizes) - 3])
 
         if algorithmsToTest[i] == "kargerAndStein":
             for j in range (len(sizes)):
                 reference.append (constant[i][len(constant[0]) - 1] * (sizes[j][0]**2) * math.log(sizes[j][0])**3)
         else:
             for j in range (len(sizes)):
-                reference.append (constant[i][len(constant[0]) - 1] * sizes[j][1] * sizes[j][0] + sizes[j][0]**2 * math.log(sizes[j][0]))
+                reference.append (constant[i][len(constant[0]) - 1] * sizes[j][1] * sizes[j][0] * math.log(sizes[j][0]))
 
-        plt.plot(graphs_groupped.keys(), times[i], graphs_groupped.keys(), reference)
+        plt.plot(graphs_groupped.keys(), times[i], label = algorithmsToTest[i])
+        plt.plot(graphs_groupped.keys(), reference, label="reference")
+        plt.legend()
         plt.title("performance " + algorithmsToTest[i])
         plt.ylabel('run time(ns)')
         plt.xlabel('size')
         plt.show()
 
-    plt.plot(graphs_groupped.keys(), times[0], label = 'Prim')
-    plt.plot(graphs_groupped.keys(), times[1],label = 'Kruskal')
-    plt.plot(graphs_groupped.keys(), times[2], label = 'Kruskal naive')
-    plt.legend()
-    plt.title("grafici in relazione")
-    plt.ylabel('run time(ns)')
-    plt.xlabel('size')
-    plt.show()
 
-    plt.plot(graphs_groupped.keys(), times[0], label = 'Prim')
-    plt.plot(graphs_groupped.keys(), times[1],label = 'Kruskal')
+    plt.plot(graphs_groupped.keys(), times[0], label = 'kargerAndStein')
+    plt.plot(graphs_groupped.keys(), times[1],label = 'storeAndWagner')
     plt.legend()
     plt.title("grafici in relazione")
     plt.ylabel('run time(ns)')
@@ -418,10 +427,13 @@ def kargerAndStein(g, k):
 
 dict_pesi = {}
 
+
 #funzione che salva i pesi dei tagli di s_w in un dizionario
 def crea_dict(lista_grafi):
     for g in lista_grafi:
         dict_pesi[g.nome] = [0,0]
+
+
 
 #funzione utile a calcolare il peso del global min_cut
 def calcola_peso_taglio(grafo):
@@ -429,7 +441,6 @@ def calcola_peso_taglio(grafo):
     sum = 0
     for peso in grafo.adj_matrix[nodo_merge.id]:
         sum += peso
-    
     return sum
 
 
@@ -487,11 +498,14 @@ def stMinCut(g):
 
 
 def stMerge(g, s, t):
+    
     g.adj_matrix[s.id][t.id] = 0
     g.adj_matrix[t.id][s.id] = 0
 
 
     for nodo in g.lista_nodi_updated:
+        #utile per il peso del globalMinCut
+
         g.adj_matrix[s.id][nodo.id] += g.adj_matrix[t.id][nodo.id]
         g.adj_matrix[nodo.id][s.id] += g.adj_matrix[nodo.id][t.id]
         g.adj_matrix[t.id][nodo.id] = 0 
@@ -522,15 +536,22 @@ print("numero grafi", len(lista_grafi))
 print("-"*50)
 
 crea_dict(lista_grafi)
-print("-"*50)
+
+
+
+#plot_graph()
+
+
+
 
 i = 0
 while i < len(lista_grafi):
+    k = round(math.log(lista_grafi[i].n_nodi)**2)
+    res = kargerAndStein(lista_grafi[i], k)
+    res_karger_stain.append(res[0])
+    
     g, peso = globalMinCut(lista_grafi[i])
     res_stoer_wagner.append(peso)
-    
-    #esegui karger stain
-    res_karger_stain.append(0)
     
     i += 1
 
@@ -542,14 +563,14 @@ tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain)
 
 ############################# KARGER STAIN #############################
 
-for grafo in lista_grafi:
-    print ("nodi numero: ",grafo.n_nodi)
-    k = round(math.log(grafo.n_nodi)**2)
-    res = kargerAndStein(grafo, k)
-    print("soluzione")
-    print(res[0])
-    print("trovata dopo:")
-    print(res[2], "iterazioni e", res[3], "nanosecondi")
+# for grafo in lista_grafi:
+#     print ("nodi numero: ",grafo.n_nodi)
+#     k = round(math.log(grafo.n_nodi)**2)
+#     res = kargerAndStein(grafo, k)
+#     print("soluzione")
+#     print(res[0])
+#     print("trovata dopo:")
+#     print(res[2], "iterazioni e", res[3], "nanosecondi")
 
 
 

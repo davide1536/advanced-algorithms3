@@ -309,18 +309,25 @@ def min_reloaded(list):
 #funzione di output
 def tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain):
     
+    #calcolo l'errore
+    errore = []
+    for i in range(len(lista_grafi)):
+        #(soluzione_trovata - soluzione_ottima)/soluzione_ottima
+        errore.append(round((res_karger_stain[i] - res_stoer_wagner[i])/res_stoer_wagner[i],3))
+    
     table = []
     table.append([grafo.nome for grafo in lista_grafi])         #table[0]
     table.append(res_stoer_wagner)                              #table[1]
     table.append(res_karger_stain)                              #table[2]
+    table.append(errore)
 
 
     res_table = []
     for i in range(len(lista_grafi)):
-        res_table.append([table[0][i], table[1][i], table[2][i]])
+        res_table.append([table[0][i], table[1][i], table[2][i], table[3][i]])
 
     print()
-    print(tabulate(res_table, headers= ["nome grafo", "stoer_wagner", "karger_stain"], tablefmt='pretty'))
+    print(tabulate(res_table, headers= ["nome grafo", "stoer_wagner", "karger_stain", "errore"], tablefmt='pretty'))
 
  
     
