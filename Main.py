@@ -20,18 +20,16 @@ from Heap import *
 from datetime import datetime
 
 #lista di grafi prim
-p_g = []
+res_stoer_wagner = []
+
 #lista grafi kruskal
-k_g = []
-#lista grafi kruskal naive
-kn_g = []
+res_karger_stain = []
+
 
 #lista dei tempi di prim
 p_t = [] 
 #lista dei tempi di kruskal
 k_t = []
-#lista dei tempi di kruakl naive
-kn_t = []
 
 
 directory = "dataset/"
@@ -416,113 +414,45 @@ def kargerAndStein(g, k):
 
 #---------------------------------------------------------------Stoer & Wagner---------------------------------------------------------------
 
-def globalMinCut2(g):
-    if g.merged_n_nodi == 2:
-        #print([i.id for i in g.lista_nodi_updated])
-        g.totPeso = g.merged_matrix[g.lista_nodi_updated[0].id][g.lista_nodi_updated[1].id]
-        #print(g.totPeso)
-        return g
-    else:
-        g1, s, t = stMinCut(g)
-        #print("g1", g1.totPeso)
-        g2 = globalMinCut(stMerge(g, s, t))
-        #print("g2", g2.totPeso)
-        #print("-"*50)
-        #print("nodi null", [i.id for i in g2.null_node])
-        #print("nodi merged", s.id, t.id, [i.id for i in g2.merged_node])
-        #print("-"*50)
-        if(g1.totPeso < g2.totPeso):
-            #print("peso stMin minore")
-            return g1
-        else:
-            #print("peso global minore")
-            return g2
-        
-        
-
-def stMinCut2(g):
-    #inizializzo nodi
-    index = 0
-    for nodo in g.lista_nodi_updated:
-        nodo.in_h = 1
-        nodo.key = 0
-        nodo.heapIndex = index  #per non usare la funzione 'index' 
-        index += 1
-    q = Heap(g.lista_nodi_updated)
-    buildMaxHeap(q)
-    s = None
-    t = None
-    while q.heapsize != 0:
-        u = heapExtractMax(q)
-        s = t
-        t = u
-        i = -1 #indice per trovare i vicini di u
-        for nodo_adj in g.merged_matrix[u.id]:
-            i += 1
-            if nodo_adj != 0 and i > 0:
-                v = g.getNodo(i)
-                if isIn(v) == 1:
-                    v.key += g.merged_matrix[u.id][v.id]
-                    index = v.heapIndex  #ottengo la sua posizione all'interno dell'heap
-                    heapIncreaseKey(q, index, v.key)
-    
-    #return min_peso, s, t
-    g.totPeso = s.key
-    return g, s, t
-
-
-
-def stMerge2(g,s,t):
-    new_matrix = [row[:] for row in g.adj_matrix]  #matrice con nodo compresso
-    new_matrix[s.id][t.id] = 0
-    new_matrix[t.id][s.id] = 0
-    g.merged_node.add(s)
-    g.null_node.add(t)
-    g.lista_nodi_updated.remove(t)
-
-    for nodo in g.lista_nodi_updated:
-        new_matrix[s.id][nodo.id] += new_matrix[t.id][nodo.id]
-        new_matrix[nodo.id][s.id] += new_matrix[nodo.id][t.id]
-        new_matrix[t.id][nodo.id] = 0 
-        new_matrix[nodo.id][t.id] = 0
-
-
-    g.merged_matrix = new_matrix
-    g.merged_n_nodi = g.merged_n_nodi - 1
-    return g
-
-
-#---------------------------------------------------------------Stoer & Wagner---------------------------------------------------------------
 #ci riprovo
 
+dict_pesi = {}
+
+#funzione che salva i pesi dei tagli di s_w in un dizionario
+def crea_dict(lista_grafi):
+    for g in lista_grafi:
+        dict_pesi[g.nome] = [0,0]
+
+#funzione utile a calcolare il peso del global min_cut
+def calcola_peso_taglio(grafo):
+    nodo_merge = grafo.lista_nodi_updated[0]
+    sum = 0
+    for peso in grafo.adj_matrix[nodo_merge.id]:
+        sum += peso
+    
+    return sum
 
 
 def globalMinCut(g):
+    
     if g.merged_n_nodi == 2:
-        nodo1 = g.lista_nodi_updated[0]
-        nodo2 = g.lista_nodi_updated[1]
-        g.totPeso = g.merged_matrix[nodo1.id][nodo2.id]
+        peso_taglio = calcola_peso_taglio(g)
+        dict_pesi[g.nome][1] = peso_taglio
+
         return g
 
     else:
         g1, s, t = stMinCut(g)
-        for i in g.lista_nodi_updated:
-            i.key = 0
-        #g_n = copy.deepcopy(g)
         g2 = globalMinCut(stMerge(g, s, t))
 
-        if(g1.totPeso <= g2.totPeso):
-            return g1
+        if(dict_pesi[g.nome][0] <= dict_pesi[g.nome][1]):
+            return g1, dict_pesi[g.nome][0]
         else:
-            return g2
-
-
-
+            return g2, dict_pesi[g.nome][1]
 
 
 
 def stMinCut(g):
-    #g1 = copy.deepcopy(g)
     #inizializzo nodi
     index = 0
     for nodo in g.lista_nodi_updated:
@@ -539,45 +469,38 @@ def stMinCut(g):
         s = t
         t = u
         i = -1 #indice per trovare i vicini di u
-        for nodo_adj in g.merged_matrix[u.id]:
+        for nodo_adj in g.adj_matrix[u.id]:
             i += 1
             if nodo_adj != 0 and i > 0:
-                v = g.getNodo(i)                #possibile errore 
+                v = g.getNodo(i)
                 if isIn(v) == 1:
-                    v.key += g.merged_matrix[u.id][v.id]
+                    v.key += g.adj_matrix[u.id][v.id]
                     index = v.heapIndex  #ottengo la sua posizione all'interno dell'heap
                     heapIncreaseKey(q, index, v.key)
                     
-    #return min_peso, s, t
-    g.totPeso = t.key
-
+    #controllo se il nuovo talgio è inferiore a quello già calcolato
+    if dict_pesi[g.nome][0] == 0 or t.key < dict_pesi[g.nome][0]:
+        dict_pesi[g.nome][0] = t.key
     
     return g, s, t
+ 
 
 
 def stMerge(g, s, t):
-    new_matrix = [row[:] for row in g.adj_matrix]  #matrice con nodo compresso
-    new_matrix[s.id][t.id] = 0
-    new_matrix[t.id][s.id] = 0
+    g.adj_matrix[s.id][t.id] = 0
+    g.adj_matrix[t.id][s.id] = 0
 
 
     for nodo in g.lista_nodi_updated:
-        new_matrix[s.id][nodo.id] += new_matrix[t.id][nodo.id]
-        new_matrix[nodo.id][s.id] += new_matrix[nodo.id][t.id]
-        new_matrix[t.id][nodo.id] = 0 
-        new_matrix[nodo.id][t.id] = 0
+        g.adj_matrix[s.id][nodo.id] += g.adj_matrix[t.id][nodo.id]
+        g.adj_matrix[nodo.id][s.id] += g.adj_matrix[nodo.id][t.id]
+        g.adj_matrix[t.id][nodo.id] = 0 
+        g.adj_matrix[nodo.id][t.id] = 0
 
-
-    for i in g.lista_nodi_updated:
-        if i.id == t.id:
-            g.lista_nodi_updated.remove(i)
-    #g.lista_nodi_updated.remove(t)
-    
-    g.merged_matrix = new_matrix
+    g.lista_nodi_updated.remove(t)    
     g.merged_n_nodi = g.merged_n_nodi - 1
+
     return g
-
-
 
 
 
@@ -597,6 +520,22 @@ print("fine parsing")
 print("numero grafi", len(lista_grafi))
 
 print("-"*50)
+
+crea_dict(lista_grafi)
+print("-"*50)
+
+i = 0
+while i < len(lista_grafi):
+    g, peso = globalMinCut(lista_grafi[i])
+    res_stoer_wagner.append(peso)
+    
+    #esegui karger stain
+    res_karger_stain.append(0)
+    
+    i += 1
+
+tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain)
+
 
 
 

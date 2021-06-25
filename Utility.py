@@ -307,27 +307,20 @@ def min_reloaded(list):
     
 
 #funzione di output
-def output_peso(prim, kruskal, kruskal_naive, lista_grafi_originale, p_t, k_t, kn_t):
+def tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain):
     
-    #tabella [numero nodi] [numero archi] [peso_prim] [peso_kruskal] [peso_kruskal_naive] []
     table = []
-    table.append([grafo.n_nodi for grafo in lista_grafi_originale])     #table[0]
-    table.append([grafo.n_archi for grafo in lista_grafi_originale])    #table[1]
-    table.append([grafo.totPeso for grafo in prim])                     #table[2]
-    table.append([grafo.totPeso for grafo in kruskal])                  #table[3]
-    table.append([grafo.totPeso for grafo in kruskal_naive])            #table[4]
-    table.append([tempo for tempo in p_t])                              #table[5]
-    table.append([tempo for tempo in k_t])                              #table[6]
-    table.append([tempo for tempo in kn_t])                             #table[7]
+    table.append([grafo.nome for grafo in lista_grafi])         #table[0]
+    table.append(res_stoer_wagner)                              #table[1]
+    table.append(res_karger_stain)                              #table[2]
 
-    #valori tabella
-    
-    tabella = []
-    for i in range(len(lista_grafi_originale)):
-        tabella.append([table[0][i], table[1][i], table[2][i], table[3][i], table[4][i], table[5][i], table[6][i], table[7][i], min_reloaded([table[5][i], table[6][i], table[7][i]])])
+
+    res_table = []
+    for i in range(len(lista_grafi)):
+        res_table.append([table[0][i], table[1][i], table[2][i]])
 
     print()
-    print(tabulate(tabella, headers= ["n_nodi originali", "n_archi originali", "peso prim", "peso kruskal", "peso_kruskal_naive", "tempo Prim", "tempo Kruskal", "tempo Kruskal naive", "algoritmo migliore"], tablefmt='pretty'))
+    print(tabulate(res_table, headers= ["nome grafo", "stoer_wagner", "karger_stain"], tablefmt='pretty'))
 
  
     
