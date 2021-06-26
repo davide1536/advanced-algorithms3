@@ -17,6 +17,7 @@ import copy
 import time
 from Utility import *
 from Heap import *
+from HeapFibonacci import *
 from datetime import datetime
 
 #lista di grafi stoer wagner
@@ -128,6 +129,24 @@ def crea_grafi(path):
     lista_grafi.append(g)
 
 
+def measureProbability(graphs_groupped):
+    dimensions = []
+    realValue = [3056,1526, 2137,1282, 969, 341,951, 484,346, 1137, 676, 508, 400, 43]
+    data = [0]*len(realValue)
+
+    for key in graphs_groupped.keys():
+        dimensions.append(key)
+
+    i = 0
+    while i < 500:
+        for i,graphs in enumerate(graphs_groupped):
+            k = round(math.log(graphs[0].n_nodi)**2)
+            res = kargerAndStein(graphs[0],k)
+            if res[0] != realValue[i]:
+                data[i] += 1
+        i += 1
+    
+    return data, dimensions
 
 
 def measure_run_time(n_instances, graphs, algorithm):
@@ -248,6 +267,7 @@ def measurePerformance():
 
         else:
             totConstant.append([round(times[i]/(sizes[i][1] * sizes[i][0] * math.log(sizes[i][0])),3) for i in range(len(sizes))])
+    
 
     return totTimes, totRatios, totConstant, sizes, graphs_groupped
     
@@ -257,6 +277,7 @@ def plot_graph():
     
     #misuro le performance per ogni algoritmo, i valori times, ratios, constant sono matrici di dimensione 4*n n sono il numero di dimensioni dei grafi
     [times, ratios, constant, sizes, graphs_groupped] = measurePerformance()
+    data = measureProbability(graphs_groupped)
     algorithmsToTest = ["kargerAndStein","storeAndWagner"]
 
     for i in range(len(algorithmsToTest)):
@@ -463,7 +484,7 @@ def globalMinCut(g):
 
 
 
-def stMinCut(g):
+def stMinCut2(g):
     #inizializzo nodi
     index = 0
     for nodo in g.lista_nodi_updated:
@@ -517,6 +538,37 @@ def stMerge(g, s, t):
     return g
 
 
+def stMinCut(g):
+    #inizializzo nodi
+    index = 0
+    q = heap_fibonacci()
+    for nodo in g.lista_nodi_updated:
+        q.aggiungi_nodo(nodo)
+        nodo.in_h = 1
+        nodo.key = 0
+        nodo.heapIndex = index  #per non usare la funzione 'index'
+        index += 1
+    s = None
+    t = None
+    while q.tot_nodi != 0:
+        u = q.estrai_massimo()
+        s = t
+        t = u
+        i = -1 #indice per trovare i vicini di u
+        for nodo_adj in g.adj_matrix[u.id]:
+            i += 1
+            if nodo_adj != 0 and i > 0:
+                v = g.getNodo(i)
+                if isIn(v) == 1:
+                    v.key += g.adj_matrix[u.id][v.id]
+                    index = v.heapIndex  #ottengo la sua posizione all'interno dell'heap
+                    q.incrementa_key(v, v.key)
+                    
+    #controllo se il nuovo talgio è inferiore a quello già calcolato
+    if dict_pesi[g.nome][0] == 0 or t.key < dict_pesi[g.nome][0]:
+        dict_pesi[g.nome][0] = t.key
+    
+    return g, s, t
 
 
 
@@ -545,17 +597,21 @@ crea_dict(lista_grafi)
 
 
 i = 0
-while i < len(lista_grafi):
-    k = round(math.log(lista_grafi[i].n_nodi)**2)
-    res = kargerAndStein(lista_grafi[i], k)
-    res_karger_stain.append(res[0])
+while i < len(lista_grafi)-40:
+    # k = round(math.log(lista_grafi[i].n_nodi)**2)
+    # res = kargerAndStein(lista_grafi[i], k)
+    # res_karger_stain.append(res[0])
+    res_karger_stain.append(0)
     
     g, peso = globalMinCut(lista_grafi[i])
     res_stoer_wagner.append(peso)
     
     i += 1
 
-tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain)
+# if (checkWeight(res_karger_stain, res_stoer_wagner, lista_grafi)):
+#     print("entrambi gli algoritmi hanno dato risultati giusti")
+
+#tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain)
 
 
 

@@ -6,6 +6,20 @@ import numpy as np
 from Nodo import Nodo
 from Grafo import Grafo
 from tabulate import tabulate
+def checkWeight(ksWeights, swWeights, lista_grafi):
+    for i in range(len(ksWeights)):
+        ksPeso = ksWeights[i]
+        swPeso = swWeights[i]
+        for nodo in lista_grafi[i].getListaNodi():
+           
+            if ((ksPeso > nodo.d) or (swPeso > nodo.d)):
+                print("peso karger and stein", ksPeso, "peso stoer and wagner", swPeso)
+                print(lista_grafi[i].n_nodi)
+                print(nodo.d)
+                exit("il peso trovato ha un valore maggiore rispetto ad uno dei gradi pesati")
+    
+    
+    return 1
 
 def getPesoTaglio(g):
     matrix = np.array(g.adj_matrix)
@@ -311,7 +325,7 @@ def tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain):
     
     #calcolo l'errore
     errore = []
-    for i in range(len(lista_grafi)):
+    for i in range(len(lista_grafi)-40):
         #(soluzione_trovata - soluzione_ottima)/soluzione_ottima
         errore.append(round((res_karger_stain[i] - res_stoer_wagner[i])/res_stoer_wagner[i],3))
     

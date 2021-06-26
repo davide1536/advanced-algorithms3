@@ -1,17 +1,12 @@
 import math
+from Nodo import *
 
 class heap_fibonacci:
-
-    class Nodo:
-        def __init__(self, key, valore):
-            self.key = key
-            self.valore = valore
-            self.padre = None
-            self.figlio = None
-            self.sinistro = None    #fratello sinistro
-            self.destro = None      #fratello destro
-            self.grado = 0      
-            self.marcato = False
+    
+    def __init__(self):
+        self.radice_lista = None             #puntatore alla prima radice della lista
+        self.nodo_massimo = None             #puntatore alla radice con chiave massima
+        self.tot_nodi = 0                    #numero complessivo di nodi
 
     def itera(self, p):
         n = s = p
@@ -23,10 +18,6 @@ class heap_fibonacci:
                 flag = True
             yield n
             n = n.destro
-
-    radice_lista = None             #puntatore alla prima radice della lista
-    nodo_massimo = None             #puntatore alla radice con chiave massima
-    tot_nodi = 0                    #numero complessivo di nodi
 
     def trova_massimo(self):
         return self.nodo_massimo
@@ -51,8 +42,8 @@ class heap_fibonacci:
         return m
 
     #Il nuovo elemento viene inserito in testa alla lista delle radici e vengono opportunamente inizializzati tutti i suoi campi
-    def aggiungi_nodo(self, key, valore=None):
-        n = self.Nodo(key, valore)
+    def aggiungi_nodo(self, nodo):
+        n = nodo
         n.sinistro = n.destro = n
         self.unisco_liste(n)
         if self.nodo_massimo == None or n.key > self.nodo_massimo.key:
@@ -60,19 +51,19 @@ class heap_fibonacci:
         self.tot_nodi += 1
         return n
 
-    def incrementa_key(self, x, k):     #la chiave di x va incrementata, k nuovo valore della chiave
-        if k < x.key:                   #valore vecchio maggiore del nuovo
+    def incrementa_key(self, nodo, k):     #nodo puntatore la cui chiave va incrementata, k nuovo valore della chiave
+        if k < nodo.key:                   #valore vecchio maggiore del nuovo
             return None
-        x.key = k
-        y = x.padre
-        if y != None and x.key > y.key:
-            self.taglia(x, y)
+        nodo.key = k
+        y = nodo.padre
+        if y != None and nodo.key > y.key:
+            self.taglia(nodo, y)
             self.taglio_a_cascata(y)
-        if x.key > self.nodo_massimo.key:
-            self.nodo_massimo = x
+        if nodo.key > self.nodo_massimo.key:
+            self.nodo_massimo = nodo
 
     def taglia(self, x, y):
-        self.tolgi_figlio(y, x)
+        self.togli_figlio(y, x)
         y.grado -= 1
         self.unisco_liste(x)
         x.padre = None
@@ -90,10 +81,21 @@ class heap_fibonacci:
     #La funzione consolida() ha il compito di ricompattere il più possibile gli alberi
     def consolida(self):
         A = [None] * int(math.log(self.tot_nodi) * 2)
+        #print("radice lista", self.radice_lista.id)
         nodi = [w for w in self.itera(self.radice_lista)]
+        #print("nodi", [x.id for x in nodi])
         for w in range(0, len(nodi)):
             x = nodi[w]
             d = x.grado
+            print("grado", x.id, d)
+            jj = []
+            for nodo in A:
+                if nodo != None:
+                    jj.append(nodo.id)
+                else: 
+                    jj.append(None)
+            print(jj)
+            print("A[d]", A[d])
             while A[d] != None:
                 y = A[d]
                 if x.key < y.key:
@@ -103,10 +105,12 @@ class heap_fibonacci:
                 A[d] = None
                 d += 1
             A[d] = x
+            print("A[d] (2)", A[d].id)
         for i in range(0, len(A)):
             if A[i] != None:
                 if A[i].key > self.nodo_massimo.key:
                     self.nodo_massimo = A[i]
+
 
     def heap_link(self, y, x):
         self.togli_figlio(x, y)
@@ -115,6 +119,7 @@ class heap_fibonacci:
         x.grado += 1
         y.padre = x
         y.marcato = False
+
 
     def unisco_liste(self, n):
         if self.radice_lista == None:
@@ -150,3 +155,7 @@ class heap_fibonacci:
         n.sinistro.destra = n.destro
         n.destro.sinistro = n.sinistro
 
+    def isIn(v):
+        if v.in_h == 1:
+            return 1
+        return 0
