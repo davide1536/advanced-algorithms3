@@ -484,7 +484,7 @@ def globalMinCut(g):
 
 
 
-def stMinCut2(g):
+def stMinCut(g):
     #inizializzo nodi
     index = 0
     for nodo in g.lista_nodi_updated:
@@ -537,38 +537,6 @@ def stMerge(g, s, t):
 
     return g
 
-
-def stMinCut(g):
-    #inizializzo nodi
-    index = 0
-    q = heap_fibonacci()
-    for nodo in g.lista_nodi_updated:
-        q.aggiungi_nodo(nodo)
-        nodo.in_h = 1
-        nodo.key = 0
-        nodo.heapIndex = index  #per non usare la funzione 'index'
-        index += 1
-    s = None
-    t = None
-    while q.tot_nodi != 0:
-        u = q.estrai_massimo()
-        s = t
-        t = u
-        i = -1 #indice per trovare i vicini di u
-        for nodo_adj in g.adj_matrix[u.id]:
-            i += 1
-            if nodo_adj != 0 and i > 0:
-                v = g.getNodo(i)
-                if isIn(v) == 1:
-                    v.key += g.adj_matrix[u.id][v.id]
-                    index = v.heapIndex  #ottengo la sua posizione all'interno dell'heap
-                    q.incrementa_key(v, v.key)
-                    
-    #controllo se il nuovo talgio è inferiore a quello già calcolato
-    if dict_pesi[g.nome][0] == 0 or t.key < dict_pesi[g.nome][0]:
-        dict_pesi[g.nome][0] = t.key
-    
-    return g, s, t
 
 
 

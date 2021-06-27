@@ -8,10 +8,3 @@ class Nodo:
         self.heapIndex = heapIndex      # indice del nodo all'interno dell'heap
         self.d = d
         #self.merged = merged # bit utile per sapere se quel nodo è stato compresso
-        self.valore = valore
-        self.figlio = figlio
-        self.sinistro = sinistro    #fratello sinistro
-        self.destro = destro      #fratello destro
-        self.grado = grado      
-        self.marcato = marcato
-    
