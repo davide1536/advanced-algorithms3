@@ -105,8 +105,7 @@ def crea_grafi(path):
 
 
 
-
-def measure_run_time(n_instances, graphs, algorithm):
+def run_time(n_instances, graphs, algorithm):
     sum_times = 0
 
     if graphs[0].n_nodi <=20:         #per avere valori più precisi le istanze con un basso numero di nodi vengono ripetute più volte
@@ -184,7 +183,8 @@ def measure_run_time(n_instances, graphs, algorithm):
 
 
 
-def measurePerformance():
+def measurePerformance(perform):
+    
     graphs_groupped = defaultdict(list)
     
     #raggruppo i grafi in base alla dimensione dei loro nodi con un dizionario key:n_nodi, value: grafi con quel numero di nodi        
@@ -212,18 +212,20 @@ def measurePerformance():
     totTimes = []
     totRatios = []
     totConstant = []
-    for algorithm in algorithmsToTest:
-        print("sto testando", algorithm)
-        times = [measure_run_time(len(graphs_groupped[key]), graphs_groupped[key], algorithm) for key in graphs_groupped]
-        totTimes.append(times)
-        ratios = [None] + [round(times[i+1]/times[i],3) for i in range(len(sizes)-1)] 
-        totRatios.append(ratios)
 
-        if algorithm == "kargerAndStein":
-            totConstant.append([round(times[i]/((sizes[i][0]**2) * math.log(sizes[i][0])**3),3) for i in range(len(sizes))])
+    if perform == True:
+        for algorithm in algorithmsToTest:
+            print("sto testando", algorithm)
+            times = [measure_run_time(len(graphs_groupped[key]), graphs_groupped[key], algorithm) for key in graphs_groupped]
+            totTimes.append(times)
+            ratios = [None] + [round(times[i+1]/times[i],3) for i in range(len(sizes)-1)] 
+            totRatios.append(ratios)
 
-        else:
-            totConstant.append([round(times[i]/(sizes[i][1] * sizes[i][0] * math.log(sizes[i][0])),3) for i in range(len(sizes))])
+            if algorithm == "kargerAndStein":
+                totConstant.append([round(times[i]/((sizes[i][0]**2) * math.log(sizes[i][0])**3),3) for i in range(len(sizes))])
+
+            else:
+                totConstant.append([round(times[i]/(sizes[i][1] * sizes[i][0] * math.log(sizes[i][0])),3) for i in range(len(sizes))])
     
 
     return totTimes, totRatios, totConstant, sizes, graphs_groupped
@@ -233,51 +235,53 @@ def measurePerformance():
 def plot_graph():
     
     #misuro le performance per ogni algoritmo, i valori times, ratios, constant sono matrici di dimensione 4*n n sono il numero di dimensioni dei grafi
-    [times, ratios, constant, sizes, graphs_groupped] = measurePerformance()
-    dimensions, data = measureProbability(graphs_groupped)
+    perform = False
+    [times, ratios, constant, sizes, graphs_groupped] = measurePerformance(perform)
+    data, dimensions = measureProbability(graphs_groupped)
     algorithmsToTest = ["kargerAndStein","storeAndWagner"]
 
-    for i in range(len(algorithmsToTest)):
-        print ("Algoritmo:", algorithmsToTest[i])
-        print("Size\t\ttTime(ms)\t\tCostant\t\tRatio")
+    if perform == True:
+        for i in range(len(algorithmsToTest)):
+            print ("Algoritmo:", algorithmsToTest[i])
+            print("Size\t\ttTime(ms)\t\tCostant\t\tRatio")
 
-        print(65*"-")
-        for j in range(len(sizes)):
-            if j < 10:
-                print(sizes[j][0], '' , times[i][j], '', '', constant[i][j], '', ratios[i][j] ,sep="\t")
+            print(65*"-")
+            for j in range(len(sizes)):
+                if j < 10:
+                    print(sizes[j][0], '' , times[i][j], '', '', constant[i][j], '', ratios[i][j] ,sep="\t")
+                else:
+                    print(sizes[j][0], '', times[i][j], '', constant[i][j], '', ratios[i][j], sep="\t")
+            print(65*"-")
+
+
+        #grafico dei tempi
+            reference = []
+            print("costante utilizzata per calcolare la reference :", algorithmsToTest[i], " ",constant[i][len(constant[0]) - 1] )
+            print("ratio finale per",algorithmsToTest[i],": ", times[i][len(sizes) -1] / times[i][len(sizes) - 3])
+
+            if algorithmsToTest[i] == "kargerAndStein":
+                for j in range (len(sizes)):
+                    reference.append (constant[i][len(constant[0]) - 1] * (sizes[j][0]**2) * math.log(sizes[j][0])**3)
             else:
-                print(sizes[j][0], '', times[i][j], '', constant[i][j], '', ratios[i][j], sep="\t")
-        print(65*"-")
+                for j in range (len(sizes)):
+                    reference.append (constant[i][len(constant[0]) - 1] * sizes[j][1] * sizes[j][0] * math.log(sizes[j][0]))
+
+            plt.plot(graphs_groupped.keys(), times[i], label = algorithmsToTest[i])
+            plt.plot(graphs_groupped.keys(), reference, label="reference")
+            plt.legend()
+            plt.title("performance " + algorithmsToTest[i])
+            plt.ylabel('run time(ns)')
+            plt.xlabel('size')
+            plt.show()
 
 
-    #grafico dei tempi
-        reference = []
-        print("costante utilizzata per calcolare la reference :", algorithmsToTest[i], " ",constant[i][len(constant[0]) - 1] )
-        print("ratio finale per",algorithmsToTest[i],": ", times[i][len(sizes) -1] / times[i][len(sizes) - 3])
-
-        if algorithmsToTest[i] == "kargerAndStein":
-            for j in range (len(sizes)):
-                reference.append (constant[i][len(constant[0]) - 1] * (sizes[j][0]**2) * math.log(sizes[j][0])**3)
-        else:
-            for j in range (len(sizes)):
-                reference.append (constant[i][len(constant[0]) - 1] * sizes[j][1] * sizes[j][0] * math.log(sizes[j][0]))
-
-        plt.plot(graphs_groupped.keys(), times[i], label = algorithmsToTest[i])
-        plt.plot(graphs_groupped.keys(), reference, label="reference")
+        plt.plot(graphs_groupped.keys(), times[0], label = 'kargerAndStein')
+        plt.plot(graphs_groupped.keys(), times[1],label = 'storeAndWagner')
         plt.legend()
-        plt.title("performance " + algorithmsToTest[i])
+        plt.title("grafici in relazione")
         plt.ylabel('run time(ns)')
         plt.xlabel('size')
         plt.show()
-
-
-    plt.plot(graphs_groupped.keys(), times[0], label = 'kargerAndStein')
-    plt.plot(graphs_groupped.keys(), times[1],label = 'storeAndWagner')
-    plt.legend()
-    plt.title("grafici in relazione")
-    plt.ylabel('run time(ns)')
-    plt.xlabel('size')
-    plt.show()
 
     plt.hist(dimensions, data)
     plt.title("istogramma probabilità")
@@ -287,6 +291,29 @@ def plot_graph():
 
     return graphs_groupped, times
 
+
+def measureProbability(graphs_groupped):
+    dimensions = []
+    realValue = [3056,1526, 2137,1282, 969, 341,951, 484,346, 1137, 676, 508, 400, 43]
+    data = [0]*len(realValue)
+
+    for key in graphs_groupped.keys():
+        dimensions.append(key)
+    print(dimensions)
+    j = 0
+    while j < 1:
+        print("sto facendo iterazione ", j)
+        for i, key in enumerate(graphs_groupped):
+            graph = graphs_groupped[key][0]
+            print(graph.nome)
+            k = round(math.log(graph.n_nodi)**2)
+            res = kargerAndStein(graph,k)
+            print(res[0])
+            if res[0] != realValue[i]:
+                data[i] += 1
+        j += 1
+    
+    return data, dimensions
 
 #---------------------------------------------------------------Karger & Stein---------------------------------------------------------------
 
@@ -308,7 +335,7 @@ def randomSelect(g,c):
    
     index = binarySearch(c, 0, len(c)-1, r, avg)
     
-    vertex = g.getListaNodi()[index]
+    vertex = g.lista_nodi_obj[index]
     
     return vertex
 
@@ -317,7 +344,7 @@ def edgeSelect(g):
     pesiComulativi = []
     tot = 0
 
-    for u in g.getListaNodi():
+    for u in g.lista_nodi_obj:
         tot = tot + u.d
         pesiComulativi.append(tot)
 
@@ -325,7 +352,7 @@ def edgeSelect(g):
     
     pesiComulativi = []
     tot = 0
-    for v in g.getListaNodi():
+    for v in g.lista_nodi_obj:
         tot += g.adj_matrix[u.id][v.id]
         pesiComulativi.append(tot)
         
@@ -383,7 +410,7 @@ def recursiveContract(g):
 
 
 def kargerAndStein(g, k):
-    gradoPesato(g, g.getListaNodi())
+    gradoPesato(g, g.lista_nodi_obj)
     minCut = float('inf')
     gMin = Grafo()
     start_time = perf_counter_ns()
@@ -425,6 +452,7 @@ def calcola_peso_taglio(grafo):
     for peso in grafo.adj_matrix[nodo_merge.id]:
         sum += peso
     return sum
+
 
 
 def globalMinCut(g):
@@ -520,7 +548,7 @@ crea_dict(lista_grafi)
 
 
 
-#plot_graph()
+plot_graph()
 
 
 

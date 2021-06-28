@@ -108,24 +108,6 @@ def test_tot_pesi(prim, kruskal, kruskal_naive):
 
 
 
-def measureProbability(graphs_groupped, kargerAndStein):
-    dimensions = []
-    realValue = [3056,1526, 2137,1282, 969, 341,951, 484,346, 1137, 676, 508, 400, 43]
-    data = [0]*len(realValue)
-
-    for key in graphs_groupped.keys():
-        dimensions.append(key)
-
-    j = 0
-    while j < 500:
-        for i,graphs in enumerate(graphs_groupped):
-            k = round(math.log(graphs[0].n_nodi)**2)
-            res = kargerAndStein(graphs[0],k)
-            if res[0] != realValue[i]:
-                data[i] += 1
-        j += 1
-    
-    return data, dimensions
 
 ################################## Funzioni Risultati ##################################
     
