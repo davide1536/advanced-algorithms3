@@ -1,23 +1,16 @@
-from numpy import insert, square
-from numpy.lib.polynomial import roots
 from Grafo import Grafo
 from Nodo import Nodo
-from Arco import Arco
 import random
 import os
 import math
-from random import seed
-from random import randint
 import gc
 from time import perf_counter_ns
 from collections import defaultdict
 import collections
 import matplotlib.pyplot as plt
 import copy
-import time
 from Utility import *
 from Heap import *
-from HeapFibonacci import *
 from datetime import datetime
 
 #lista di grafi stoer wagner
@@ -36,6 +29,7 @@ discovery_iterations = []
 
 directory = "dataset/"
 lista_grafi = []
+dict_pesi = {}
 
 
 
@@ -54,8 +48,7 @@ def crea_grafi(path):
     id2Node = {}
     lista_nodi = set()
     lista_nodi_obj = []
-    lista_archi = []
-    lista_adiacenza = {}
+
     
     
     f = open("dataset/" + path, "r")
@@ -90,11 +83,6 @@ def crea_grafi(path):
         #set di nodi, per evitare i duplicati
         lista_nodi.add(nodo_1)
         lista_nodi.add(nodo_2)
-        lista_adiacenza.setdefault(nodo_1, [])    #inzializzo ogni chiave nodo a un valore list
-        lista_adiacenza.setdefault(nodo_2, [])    
-        
-        arco_1 = Arco(nodo_1, nodo_2, peso)
-        lista_archi.append(arco_1)
 
     
     #creo gli oggetti nodo e il dizionario id2Node
@@ -103,50 +91,19 @@ def crea_grafi(path):
         id2Node[obj_nodo.id] = obj_nodo
         lista_nodi_obj.append(obj_nodo)
 
-    #riempio le liste di adicenza create in precedenza
-    for i in range(0, len(lista_valori)):
-        nodo_1 = int(lista_valori[i][0])
-        nodo_2 = int(lista_valori[i][1])
-        peso = int(lista_valori[i][2])
-        lista_adiacenza[nodo_1].append(Arco(nodo_1, nodo_2, peso))      #arco(u,v)
-        lista_adiacenza[nodo_2].append(Arco(nodo_2, nodo_1, peso))      #arco(v,u)
-
 
     #setto gli attributi dell'arco
     g.nome = path[:-4]
     g.lista_nodi_updated = []
-    g.lista_merged = []
-    g.merged_matrix = [row[:] for row in adj_matrix]
     g.id2Node = id2Node
-    g.lista_archi = lista_archi
     g.lista_nodi_obj = sorted(lista_nodi_obj, key=lambda nodo: (nodo.id))
     g.lista_nodi_id = [n for n in range(1, g.n_nodi+1)]     
     g.adj_matrix = adj_matrix
-    g.lista_adiacenza = lista_adiacenza
     g.merged_n_nodi = g.n_nodi
     g.lista_nodi_updated[:] = lista_nodi_obj
-    g.lista_merged
     lista_grafi.append(g)
 
 
-def measureProbability(graphs_groupped):
-    dimensions = []
-    realValue = [3056,1526, 2137,1282, 969, 341,951, 484,346, 1137, 676, 508, 400, 43]
-    data = [0]*len(realValue)
-
-    for key in graphs_groupped.keys():
-        dimensions.append(key)
-
-    i = 0
-    while i < 500:
-        for i,graphs in enumerate(graphs_groupped):
-            k = round(math.log(graphs[0].n_nodi)**2)
-            res = kargerAndStein(graphs[0],k)
-            if res[0] != realValue[i]:
-                data[i] += 1
-        i += 1
-    
-    return data, dimensions
 
 
 def measure_run_time(n_instances, graphs, algorithm):
@@ -277,7 +234,7 @@ def plot_graph():
     
     #misuro le performance per ogni algoritmo, i valori times, ratios, constant sono matrici di dimensione 4*n n sono il numero di dimensioni dei grafi
     [times, ratios, constant, sizes, graphs_groupped] = measurePerformance()
-    data = measureProbability(graphs_groupped)
+    dimensions, data = measureProbability(graphs_groupped)
     algorithmsToTest = ["kargerAndStein","storeAndWagner"]
 
     for i in range(len(algorithmsToTest)):
@@ -321,6 +278,12 @@ def plot_graph():
     plt.ylabel('run time(ns)')
     plt.xlabel('size')
     plt.show()
+
+    plt.hist(dimensions, data)
+    plt.title("istogramma probabilità")
+    plt.show()
+
+    
 
     return graphs_groupped, times
 
@@ -444,9 +407,8 @@ def kargerAndStein(g, k):
 
 #---------------------------------------------------------------Stoer & Wagner---------------------------------------------------------------
 
-#ci riprovo
 
-dict_pesi = {}
+
 
 
 #funzione che salva i pesi dei tagli di s_w in un dizionario
@@ -470,7 +432,6 @@ def globalMinCut(g):
     if g.merged_n_nodi == 2:
         peso_taglio = calcola_peso_taglio(g)
         dict_pesi[g.nome][1] = peso_taglio
-
         return g
 
     else:
@@ -541,12 +502,12 @@ def stMerge(g, s, t):
 
 
 
-######################## MAIN ########################
+#--------------------------------------------------------------- Main ---------------------------------------------------------------
 
 print("-"*50)
 parsing(directory)
 
-#lista_grafi = sorted(lista_grafi, key=lambda grafo: (grafo.n_nodi, grafo.n_archi))
+
 lista_grafi = sorted(lista_grafi, key=lambda grafo: (grafo.nome))
 
 print("fine parsing")
