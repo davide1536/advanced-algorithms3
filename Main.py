@@ -3,6 +3,7 @@ from Nodo import Nodo
 import random
 import os
 import math
+import time
 import gc
 from time import perf_counter_ns
 from collections import defaultdict
@@ -18,11 +19,15 @@ res_stoer_wagner = []
 #lista grafi karger stain
 res_karger_stain = []
 
+time_out = False
+
+
 
 #lista dei tempi di stoer wagner
 time_stoer_wagner = [] 
 #lista dei tempi di karger stain
 time_karger_stain = []
+
 discovery_times = []
 discovery_iterations = []
 
@@ -31,11 +36,17 @@ directory = "dataset/"
 lista_grafi = []
 dict_pesi = {}
 
+class HaltException(Exception):
+    pass
+
+
 
 
 def parsing(directory):
     for file in os.listdir(directory):
             crea_grafi(file)
+
+
 
 
 
@@ -105,48 +116,56 @@ def crea_grafi(path):
 
 
 
-def measure_run_time(n_instances, graphs, algorithm):
+def measure_run_time(n_instances, graphs, algorithm, start):
     sum_times = 0
 
     if graphs[0].n_nodi <=20:         #per avere valori più precisi le istanze con un basso numero di nodi vengono ripetute più volte
-        iterations = 30
+        iterations = 900
     else:
         iterations = 1
-    #liste per confrontare gli algoritmi                          
-    # global p_g
-    # global k_g
-    # global kn_g
-    # global sw_t 
-    # global ks_t 
-
+    
 
     print("testing graph size: ", graphs[0].n_nodi)
+    
+    #tempo prima del timeout
+    PERIOD_OF_TIME = 5
+    
     for i in range(n_instances):
         print("istanza numbero: ",i)
         if algorithm == "kargerAndStein":
+            
             gc.disable()
             #nodo_casuale = next(iter(graphs[i].lista_nodi))    #casuale perchè il set lista_nodi cambia ordine ad ogni parsing
             
             start_time = perf_counter_ns()
             m = 0
             res = []
-            while m < iterations:
-                #prim(graphs[i],graphs[i].getNodo(nodo_casuale))
-                k = round(math.log(graphs[i].n_nodi)**2)
-                res = kargerAndStein(graphs[i], k)
-                m+=1
+            
+            #controllo timeout
+            if time.time() < start + PERIOD_OF_TIME :
+            
+                while m < iterations:
+                    #prim(graphs[i],graphs[i].getNodo(nodo_casuale))
+                    k = round(math.log(graphs[i].n_nodi)**2)
+                    res = kargerAndStein(graphs[i], k)
+                    m+=1
 
-            end_time = perf_counter_ns()
-            res_karger_stain.append(res[0])
-            discovery_times.append(res[3])
-            #p_g.append(prim(graphs[i],graphs[i].getNodo(nodo_casuale)).getGrafoPrim())
-            discovery_time = res[3]
-            discovery_iteration = res[2]
+                end_time = perf_counter_ns()
+                res_karger_stain.append(res[0])
+                #p_g.append(prim(graphs[i],graphs[i].getNodo(nodo_casuale)).getGrafoPrim())
+                discovery_time = res[3]
+                discovery_iteration = res[2]
 
-            discovery_times.append(discovery_time)
-            discovery_iterations.append(discovery_iteration)
-            time_karger_stain.append(round((end_time - start_time)/iterations//1000, 3))
-            gc.enable()
+                discovery_times.append(discovery_time)
+                discovery_iterations.append(discovery_iteration)
+                time_karger_stain.append(round((end_time - start_time)/iterations//1000, 3))
+                gc.enable()
+            
+            else:
+                res_karger_stain.append(0)
+                time_karger_stain.append(0)
+                discovery_times.append(math.inf)
+                end_time = 0
 
         res_s = 0
         if algorithm == "storeAndWagner":            
@@ -158,26 +177,25 @@ def measure_run_time(n_instances, graphs, algorithm):
                 newGrafi.append(copy.deepcopy(graphs[i]))
 
             start_time = perf_counter_ns()
-            while j < iterations:
-                g,res_s = globalMinCut(newGrafi[j])
-                j+=1
-            end_time = perf_counter_ns()
-            res_stoer_wagner.append(res_s)
-            #kn_g.append(naiveKruskal(graphs[i]))
-            time_stoer_wagner.append(round((end_time - start_time)/iterations//1000, 3))
-            gc.enable()
+            
+            #controllo timeout
+            if time.time() < start + PERIOD_OF_TIME :
+            
+                while j < iterations:
+                    g,res_s = globalMinCut(newGrafi[j])
+                    j+=1
+                end_time = perf_counter_ns()
+                res_stoer_wagner.append(res_s)
+                #kn_g.append(naiveKruskal(graphs[i]))
+                time_stoer_wagner.append(round((end_time - start_time)/iterations//1000, 3))
+                gc.enable()
+            
+            else:
+                res_stoer_wagner.append(0)
+                time_stoer_wagner.append(0)
+                end_time = 0
 
-        # if algorithm == "Kruskal":
-        #     gc.disable()
-        #     start_time = perf_counter_ns()
-        #     k = 0
-        #     while k < iterations:
-        #         #kruskal(graphs[i])     
-        #         k += 1
-        #     end_time = perf_counter_ns()
-        #     #k_g.append(kruskal(graphs[i]))
-        #     k_t.append(round((end_time - start_time)/iterations//1000, 3))
-        #     gc.enable()
+        
 
         sum_times += (end_time - start_time)/iterations
 
@@ -212,7 +230,7 @@ def measurePerformance(perform):
         arches = 0
         nodes = 0
 
-    #algorithmsToTest = ["kargerAndStein","storeAndWagner"]
+
     algorithmsToTest = ["kargerAndStein","storeAndWagner"]
     totTimes = []
     totRatios = []
@@ -220,8 +238,12 @@ def measurePerformance(perform):
 
     if perform == True:
         for algorithm in algorithmsToTest:
+            
+            #inizio timer per timeout
+            start = time.time()
+            
             print("sto testando", algorithm)
-            times = [measure_run_time(len(graphs_groupped[key]), graphs_groupped[key], algorithm) for key in graphs_groupped]
+            times = [measure_run_time(len(graphs_groupped[key]), graphs_groupped[key], algorithm, start) for key in graphs_groupped]
             totTimes.append(times)
             ratios = [None] + [round(times[i+1]/times[i],3) for i in range(len(sizes)-1)] 
             totRatios.append(ratios)
@@ -295,6 +317,7 @@ def plot_graph():
     
 
     return graphs_groupped, times
+
 
 
 def measureProbability(graphs_groupped):
@@ -390,6 +413,7 @@ def contractEdge(g, edge):
     g.merged_n_nodi -= 1
 
 
+
 def contract(g, k):
     n = g.merged_n_nodi
     for i in range(n-k):
@@ -397,6 +421,7 @@ def contract(g, k):
         edge = [u,v]
         contractEdge(g, edge)
     return g
+
 
 
 #funzione che consente di trovare un taglio
@@ -413,6 +438,7 @@ def recursiveContract(g):
     g1 = contract(g, t)
     g2 = contract(g,t)
     return min(recursiveContract(g1), recursiveContract(g2))
+
 
 
 def kargerAndStein(g, k):
@@ -439,10 +465,6 @@ def kargerAndStein(g, k):
 
 
 #---------------------------------------------------------------Stoer & Wagner---------------------------------------------------------------
-
-
-
-
 
 #funzione che salva i pesi dei tagli di s_w in un dizionario
 def crea_dict(lista_grafi):
@@ -534,7 +556,15 @@ def stMerge(g, s, t):
 
 
 
-
+def plot_graph_timeout():
+    
+    try:
+        plot_graph()
+    
+    except HaltException as error:
+        pass
+    
+    
 
 #--------------------------------------------------------------- Main ---------------------------------------------------------------
 
@@ -554,7 +584,7 @@ crea_dict(lista_grafi)
 
 
 
-plot_graph()
+plot_graph_timeout()
 tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain, time_stoer_wagner, time_karger_stain, discovery_times)
 
 

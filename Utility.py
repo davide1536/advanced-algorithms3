@@ -121,7 +121,10 @@ def tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain, tempi_stoer, 
     archi = []
     for i in range(len(lista_grafi)):
         #(soluzione_trovata - soluzione_ottima)/soluzione_ottima
-        errore.append(round((res_karger_stain[i] - res_stoer_wagner[i])/res_stoer_wagner[i],3))
+        if res_stoer_wagner[i] != 0:        #per gestire il timeout
+            errore.append(round((res_karger_stain[i] - res_stoer_wagner[i])/res_stoer_wagner[i],3))
+        else:
+            errore.append(math.inf)
         archi.append(lista_grafi[i].n_archi)
         migliore.append(min(tempi_stoer[i], tempi_karger[i]))
 
@@ -141,8 +144,10 @@ def tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain, tempi_stoer, 
     for i in range(len(lista_grafi)):
         res_table.append([table[0][i], table[1][i], table[2][i], table[3][i], table[4][i], table[5][i], table[6][i], table[7][i], table[8][i]])
 
+
     print()
     print(tabulate(res_table, headers= ["nome grafo", "numero archi", "stoer_wagner", "karger_stain", "errore", "tempi_stoer_wagner", "tempi_karger_stain","discovery time" , "più veloce"], tablefmt='pretty'))
+
 
  
     
