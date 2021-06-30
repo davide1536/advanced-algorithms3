@@ -105,7 +105,7 @@ def crea_grafi(path):
 
 
 
-def run_time(n_instances, graphs, algorithm):
+def measure_run_time(n_instances, graphs, algorithm):
     sum_times = 0
 
     if graphs[0].n_nodi <=20:         #per avere valori più precisi le istanze con un basso numero di nodi vengono ripetute più volte
@@ -129,6 +129,7 @@ def run_time(n_instances, graphs, algorithm):
             
             start_time = perf_counter_ns()
             m = 0
+            res = []
             while m < iterations:
                 #prim(graphs[i],graphs[i].getNodo(nodo_casuale))
                 k = round(math.log(graphs[i].n_nodi)**2)
@@ -136,6 +137,8 @@ def run_time(n_instances, graphs, algorithm):
                 m+=1
 
             end_time = perf_counter_ns()
+            res_karger_stain.append(res[0])
+            discovery_times.append(res[3])
             #p_g.append(prim(graphs[i],graphs[i].getNodo(nodo_casuale)).getGrafoPrim())
             discovery_time = res[3]
             discovery_iteration = res[2]
@@ -145,6 +148,7 @@ def run_time(n_instances, graphs, algorithm):
             time_karger_stain.append(round((end_time - start_time)/iterations//1000, 3))
             gc.enable()
 
+        res_s = 0
         if algorithm == "storeAndWagner":            
             gc.disable()
             j = 0
@@ -155,9 +159,10 @@ def run_time(n_instances, graphs, algorithm):
 
             start_time = perf_counter_ns()
             while j < iterations:
-                globalMinCut(newGrafi[j])
+                g,res_s = globalMinCut(newGrafi[j])
                 j+=1
             end_time = perf_counter_ns()
+            res_stoer_wagner.append(res_s)
             #kn_g.append(naiveKruskal(graphs[i]))
             time_stoer_wagner.append(round((end_time - start_time)/iterations//1000, 3))
             gc.enable()
@@ -235,9 +240,9 @@ def measurePerformance(perform):
 def plot_graph():
     
     #misuro le performance per ogni algoritmo, i valori times, ratios, constant sono matrici di dimensione 4*n n sono il numero di dimensioni dei grafi
-    perform = False
+    perform = True
     [times, ratios, constant, sizes, graphs_groupped] = measurePerformance(perform)
-    data, dimensions = measureProbability(graphs_groupped)
+    #data, dimensions = measureProbability(graphs_groupped)
     algorithmsToTest = ["kargerAndStein","storeAndWagner"]
 
     if perform == True:
@@ -283,10 +288,10 @@ def plot_graph():
         plt.xlabel('size')
         plt.show()
 
-    plt.hist(dimensions, data)
-    plt.title("istogramma probabilità")
-    plt.show()
-
+  
+    # plt.bar(dimensions, data)
+    # plt.show()
+    # plt.title("istogramma probabilità")
     
 
     return graphs_groupped, times
@@ -301,14 +306,12 @@ def measureProbability(graphs_groupped):
         dimensions.append(key)
     print(dimensions)
     j = 0
-    while j < 1:
+    while j < 300:
         print("sto facendo iterazione ", j)
         for i, key in enumerate(graphs_groupped):
             graph = graphs_groupped[key][0]
-            print(graph.nome)
             k = round(math.log(graph.n_nodi)**2)
             res = kargerAndStein(graph,k)
-            print(res[0])
             if res[0] != realValue[i]:
                 data[i] += 1
         j += 1
@@ -326,11 +329,10 @@ def gradoPesato(g, nodi):
 
 
 def randomSelect(g,c):
-    
-    r = random.randint(0, c[len(c)-1])
+    minValue = 0
+    maxValue = c[len(c)-1]-1
+    r = random.randint(minValue, maxValue)
 
-    
-    r = random.randint(0, c[len(c)-1])
     avg = sum(c) / len(c)
    
     index = binarySearch(c, 0, len(c)-1, r, avg)
@@ -341,28 +343,32 @@ def randomSelect(g,c):
 
 
 def edgeSelect(g):
-    pesiComulativi = []
-    tot = 0
+
+    pesiComulativi_u = []
+    tot_u = 0
 
     for u in g.lista_nodi_obj:
-        tot = tot + u.d
-        pesiComulativi.append(tot)
-
-    u = randomSelect(g,pesiComulativi)
+        tot_u = tot_u + u.d
+        pesiComulativi_u.append(tot_u)
     
-    pesiComulativi = []
-    tot = 0
+    
+    u = randomSelect(g,pesiComulativi_u)
+
+    pesiComulativi_v = []
+    tot_v = 0
+
     for v in g.lista_nodi_obj:
-        tot += g.adj_matrix[u.id][v.id]
-        pesiComulativi.append(tot)
+        tot_v += g.adj_matrix[u.id][v.id]
+        pesiComulativi_v.append(tot_v)
         
-    v = randomSelect(g,pesiComulativi)
+    v = randomSelect(g,pesiComulativi_v)
+
+       
+
+    return u,v
 
 
-    return u,v, pesiComulativi
-
-
-def contractEdge(g, edge, c):
+def contractEdge(g, edge):
     u = edge[0]
     v = edge[1]
     if  g.adj_matrix[u.id][v.id] == 0:
@@ -387,9 +393,9 @@ def contractEdge(g, edge, c):
 def contract(g, k):
     n = g.merged_n_nodi
     for i in range(n-k):
-        u,v,c = edgeSelect(g)
+        u,v = edgeSelect(g)
         edge = [u,v]
-        contractEdge(g, edge, c)
+        contractEdge(g, edge)
     return g
 
 
@@ -426,7 +432,7 @@ def kargerAndStein(g, k):
             gMin = g2
             minCut = cut
 
-    discoveredTime = discoveredTime - start_time
+    discoveredTime = round((discoveredTime - start_time) / 1000000000,5)
 
     return minCut, gMin, discoveredIteration, discoveredTime
 
@@ -549,21 +555,26 @@ crea_dict(lista_grafi)
 
 
 plot_graph()
+tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain, time_stoer_wagner, time_karger_stain, discovery_times)
 
 
 
-
-i = 0
-while i < len(lista_grafi)-40:
-    # k = round(math.log(lista_grafi[i].n_nodi)**2)
-    # res = kargerAndStein(lista_grafi[i], k)
-    # res_karger_stain.append(res[0])
-    res_karger_stain.append(0)
+# count = 0
+# i = 0
+# while i < len(lista_grafi):
+#     k = round(math.log(lista_grafi[i].n_nodi)**2)
+#     res = kargerAndStein(lista_grafi[i], k)
+#     #res_karger_stain.append(res[0])
+#     print("discovery time:", res[3])
+#     print("alla iterazione ", res[2], "su un totale di ", k, "iterazioni")
+#     # if res[0] != 5152:
+#     #     count +=1
+#     #res_karger_stain.append(0)    
+#     #g, peso = globalMinCut(lista_grafi[i])
+#     #res_stoer_wagner.append(peso)
     
-    g, peso = globalMinCut(lista_grafi[i])
-    res_stoer_wagner.append(peso)
-    
-    i += 1
+#     i += 1
+
 
 # if (checkWeight(res_karger_stain, res_stoer_wagner, lista_grafi)):
 #     print("entrambi gli algoritmi hanno dato risultati giusti")

@@ -20,6 +20,7 @@ def getPesoTaglio(g):
 
 def binarySearch(c, low, high, element, avg):
     if high >= low:
+
         mid = (high + low) // 2
         # print("indice medio:", mid)
         # print("elemento medio:", c[mid])
@@ -48,7 +49,6 @@ def binarySearch(c, low, high, element, avg):
                 return binarySearch(c, mid+1, high, element, avg)
             
             elif c[mid] == element:
-                #print("MEDIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
                 if element < avg:
                     return binarySearch(c, mid+1, high, element, avg)
                 else:
@@ -113,27 +113,36 @@ def test_tot_pesi(prim, kruskal, kruskal_naive):
     
 
 #funzione di output
-def tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain):
-    
+def tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain, tempi_stoer, tempi_karger,discovery_times):
+
     #calcolo l'errore
     errore = []
-    for i in range(len(lista_grafi)-40):
+    migliore = []
+    archi = []
+    for i in range(len(lista_grafi)):
         #(soluzione_trovata - soluzione_ottima)/soluzione_ottima
         errore.append(round((res_karger_stain[i] - res_stoer_wagner[i])/res_stoer_wagner[i],3))
-    
+        archi.append(lista_grafi[i].n_archi)
+        migliore.append(min(tempi_stoer[i], tempi_karger[i]))
+
     table = []
     table.append([grafo.nome for grafo in lista_grafi])         #table[0]
+    table.append(archi)
     table.append(res_stoer_wagner)                              #table[1]
     table.append(res_karger_stain)                              #table[2]
     table.append(errore)
+    table.append(tempi_stoer)
+    table.append(tempi_karger)
+    table.append(discovery_times)
+    table.append(migliore)
 
 
     res_table = []
     for i in range(len(lista_grafi)):
-        res_table.append([table[0][i], table[1][i], table[2][i], table[3][i]])
+        res_table.append([table[0][i], table[1][i], table[2][i], table[3][i], table[4][i], table[5][i], table[6][i], table[7][i], table[8][i]])
 
     print()
-    print(tabulate(res_table, headers= ["nome grafo", "stoer_wagner", "karger_stain", "errore"], tablefmt='pretty'))
+    print(tabulate(res_table, headers= ["nome grafo", "numero archi", "stoer_wagner", "karger_stain", "errore", "tempi_stoer_wagner", "tempi_karger_stain","discovery time" , "più veloce"], tablefmt='pretty'))
 
  
     
