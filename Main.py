@@ -36,9 +36,6 @@ directory = "dataset/"
 lista_grafi = []
 dict_pesi = {}
 
-class HaltException(Exception):
-    pass
-
 
 
 
@@ -120,7 +117,7 @@ def measure_run_time(n_instances, graphs, algorithm, start):
     sum_times = 0
 
     if graphs[0].n_nodi <=20:         #per avere valori più precisi le istanze con un basso numero di nodi vengono ripetute più volte
-        iterations = 900
+        iterations = 30
     else:
         iterations = 1
     
@@ -128,7 +125,7 @@ def measure_run_time(n_instances, graphs, algorithm, start):
     print("testing graph size: ", graphs[0].n_nodi)
     
     #tempo prima del timeout
-    PERIOD_OF_TIME = 5
+    PERIOD_OF_TIME = 900
     
     for i in range(n_instances):
         print("istanza numbero: ",i)
@@ -310,10 +307,6 @@ def plot_graph():
         plt.xlabel('size')
         plt.show()
 
-  
-    # plt.bar(dimensions, data)
-    # plt.show()
-    # plt.title("istogramma probabilità")
     
 
     return graphs_groupped, times
@@ -556,16 +549,6 @@ def stMerge(g, s, t):
 
 
 
-def plot_graph_timeout():
-    
-    try:
-        plot_graph()
-    
-    except HaltException as error:
-        pass
-    
-    
-
 #--------------------------------------------------------------- Main ---------------------------------------------------------------
 
 print("-"*50)
@@ -584,92 +567,6 @@ crea_dict(lista_grafi)
 
 
 
-plot_graph_timeout()
+plot_graph()
 tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain, time_stoer_wagner, time_karger_stain, discovery_times)
 
-
-
-# count = 0
-# i = 0
-# while i < len(lista_grafi):
-#     k = round(math.log(lista_grafi[i].n_nodi)**2)
-#     res = kargerAndStein(lista_grafi[i], k)
-#     #res_karger_stain.append(res[0])
-#     print("discovery time:", res[3])
-#     print("alla iterazione ", res[2], "su un totale di ", k, "iterazioni")
-#     # if res[0] != 5152:
-#     #     count +=1
-#     #res_karger_stain.append(0)    
-#     #g, peso = globalMinCut(lista_grafi[i])
-#     #res_stoer_wagner.append(peso)
-    
-#     i += 1
-
-
-# if (checkWeight(res_karger_stain, res_stoer_wagner, lista_grafi)):
-#     print("entrambi gli algoritmi hanno dato risultati giusti")
-
-#tot_risultati(lista_grafi, res_stoer_wagner, res_karger_stain)
-
-
-
-
-
-############################# KARGER STAIN #############################
-
-# for grafo in lista_grafi:
-#     print ("nodi numero: ",grafo.n_nodi)
-#     k = round(math.log(grafo.n_nodi)**2)
-#     res = kargerAndStein(grafo, k)
-#     print("soluzione")
-#     print(res[0])
-#     print("trovata dopo:")
-#     print(res[2], "iterazioni e", res[3], "nanosecondi")
-
-
-
-############################# STOER WAGNER #############################
-
-
-# for i in range(len(lista_grafi)-40):
-#     rip = globalMinCut(lista_grafi[i])
-#     print(rip.totPeso)
-
-
-""" #STOER      PRINT
-lista_grafi = []
-parsing(directory)
-print("fine parsing")
-
-print("numero grafi", len(lista_grafi))
-
-#lista_grafi = sorted(lista_grafi, key=lambda grafo: (grafo.n_nodi, grafo.n_archi))
-lista_grafi = sorted(lista_grafi, key=lambda grafo: (grafo.nome))
-
-print("-"*50)
-
-
-res = []
-i = 0
-while i < len(lista_grafi)-40:
-    g = globalMinCut(lista_grafi[i])
-    res.append(g.totPeso)
-    #print(g.n_nodi, g.totPeso)
-    i += 1
-
-
-table = []
-table.append([grafo.nome for grafo in lista_grafi])
-#table.append([grafo.n_nodi for grafo in lista_grafi])     #table[0]
-table.append([[i.id for i in grafo.lista_nodi_updated] for grafo in lista_grafi])
-table.append(res)                                         #table[1]
-
-
-res_table = []
-for i in range(len(lista_grafi)-40):
-    res_table.append([table[0][i], table[1][i], table[2][i]])
-
-#print()
-print(tabulate(res_table, headers= ["nome grafo", "nodi", "stoer_wagner"], tablefmt='pretty'))
-
-#print_m(lista_grafi[0].adj_matrix) """
